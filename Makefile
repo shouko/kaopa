@@ -42,7 +42,7 @@ $(OUTDIR)/%.o: %.cpp socket.h
 	g++ -c $(MAKEFLAGS) $< -o $@
 
 clean:
-	rm -f debug/* bin/* tmp/*
+	rm -rf bin/*
 
 ctags:
 	ctags *.cpp *.h
