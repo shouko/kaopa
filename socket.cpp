@@ -27,6 +27,9 @@ Socket::~Socket(){
 
 const char* Socket::recv(){
 	if(::recv(sockfd, recv_buf, MAX_BUF, 0) > 0){
+#ifdef DEBUG
+		cout << "<< " << recv_buf << endl;
+#endif
 		return recv_buf;
 	}else{
 		return "";
@@ -41,6 +44,9 @@ int Socket::send(const char* msg){
 	if(!this->isConnected()){
 		throw SocketException();
 	}
+#ifdef DEBUG
+	cout << ">> " << msg << endl;
+#endif
 	return ::send(sockfd, msg, strlen(msg), 0);
 }
 
