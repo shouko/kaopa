@@ -1,28 +1,49 @@
 #include "socket.h"
 
 Socket::Socket(){
-	/*
+	sockfd = -1;
+}
+
+Socket::Socket(const char* hostname, const char* port){
+	this->connect(hostname, port);
+}
+
+int Socket::connect(const char* hostname, const char* port){
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 
-	getaddrinfo(argv[1], argv[2], &hints, &res);
-	s = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-	if(connect(s, res->ai_addr, res->ai_addrlen)){
-		cerr << "Error connecting to host " << argv[1] << " port " << argv[2] << endl;
-		return 0;
+	::getaddrinfo(hostname, port, &hints, &res);
+	sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+	if(::connect(sockfd, res->ai_addr, res->ai_addrlen)){
+		throw SocketException();
 	}
-	*/
+	return 0;
 }
 
 Socket::~Socket(){
-
+	close(sockfd);
 }
 
-int recv(){
-	return 0;
+const char* Socket::recv(){
+	if(::recv(sockfd, recv_buf, MAX_BUF, 0) > 0){
+		return recv_buf;
+	}else{
+		return "";
+	}
 }
 
-int send(){
-	return 0;
+int Socket::send(const string msg){
+	return this->send(msg.c_str());
+}
+
+int Socket::send(const char* msg){
+	if(!this->isConnected()){
+		throw SocketException();
+	}
+	return ::send(sockfd, msg, strlen(msg), 0);
+}
+
+bool Socket::isConnected(){
+	return sockfd != -1;
 }
