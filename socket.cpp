@@ -14,10 +14,25 @@ int Socket::connect(const char* hostname, const char* port){
 	hints.ai_socktype = SOCK_STREAM;
 
 	::getaddrinfo(hostname, port, &hints, &res);
-	sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-	if(::connect(sockfd, res->ai_addr, res->ai_addrlen)){
+	struct addrinfo *p;
+	for(p = res; p != NULL; p = p->ai_next){
+		if((sockfd = ::socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1){
+			// perror("connect");
+			continue;
+		}
+		if (::connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+			::close(sockfd);
+			// perror("connect");
+			continue;
+		}
+		break;
+	}
+
+	if(p == NULL){
 		throw SocketException();
 	}
+
+	freeaddrinfo(res);
 	return 0;
 }
 
