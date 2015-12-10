@@ -9,10 +9,16 @@ int main(int argc, char* argv[]){
 		return 0;
 	}
 	Socket s(argv[1], argv[2]);
-	cout << "<< " << s.recv() << endl;
-	s.send("REGISTER#GOOGLE\n");
-	cout << s.recv() << endl;
-	int a;
-	cin >> a;
+	s.recv();
+	string input, toSend;
+	int withLf;
+	while(cin >> input >> withLf){
+		toSend = input;
+		if(withLf){
+			toSend += '\n';
+		}
+		s.send(toSend);
+		s.recv();
+	}
 	return 0;
 }
