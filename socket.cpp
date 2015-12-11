@@ -4,11 +4,16 @@ Socket::Socket(){
 	sockfd = -1;
 }
 
+Socket::Socket(const int sockfd){
+	this->sockfd = sockfd;
+}
+
 Socket::Socket(const char* hostname, const char* port){
 	this->connect(hostname, port);
 }
 
 int Socket::connect(const char* hostname, const char* port){
+	struct addrinfo hints, *res;
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
@@ -63,6 +68,34 @@ int Socket::send(const char* msg){
 	cout << ">> " << msg << endl;
 #endif
 	return ::send(sockfd, msg, strlen(msg), 0);
+}
+
+int Socket::listen(const char* port){
+	return this->listen(atoi(port));
+}
+
+int Socket::listen(const unsigned short port){
+	struct sockaddr_in dest;
+	sockfd = ::socket(PF_INET, SOCK_STREAM, 0);
+	bzero(&dest, sizeof(dest));
+	dest.sin_family = AF_UNSPEC;
+	dest.sin_port = htons(port);
+	dest.sin_addr.s_addr = INADDR_ANY;
+	::bind(sockfd, (struct sockaddr*)&dest, sizeof(dest));
+	::listen(sockfd, 20);
+	return 0;
+}
+
+Socket Socket::accept(){
+	if(!this->isConnected()){
+		throw SocketException();
+	}
+	int clientfd;
+	struct sockaddr_in client_addr;
+	unsigned int addrlen = sizeof(client_addr);
+	clientfd = ::accept(sockfd, (struct sockaddr*)&client_addr, &addrlen);
+
+	return Socket(clientfd);
 }
 
 bool Socket::isConnected(){
