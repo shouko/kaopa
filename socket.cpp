@@ -86,7 +86,7 @@ int Socket::listen(const unsigned short port){
 	return 0;
 }
 
-Socket Socket::accept(){
+Socket* Socket::accept(){
 	if(!this->isConnected()){
 		throw SocketException();
 	}
@@ -95,7 +95,7 @@ Socket Socket::accept(){
 	unsigned int addrlen = sizeof(client_addr);
 	clientfd = ::accept(sockfd, (struct sockaddr*)&client_addr, &addrlen);
 
-	return Socket(clientfd);
+	return new Socket(clientfd);
 }
 
 bool Socket::isConnected(){

@@ -28,7 +28,7 @@ public:
 	const char* recv();
 	int listen(const char* port);
 	int listen(const unsigned short port);
-	Socket accept();
+	Socket* accept();
 	bool isConnected();
 private:
 	int sockfd;
