@@ -82,8 +82,11 @@ int Socket::listen(const unsigned short port){
 	dest.sin_port = htons(port);
 	dest.sin_addr.s_addr = INADDR_ANY;
 	::bind(sockfd, (struct sockaddr*)&dest, sizeof(dest));
-	::listen(sockfd, 20);
-	return 0;
+	if(::listen(sockfd, 20)){
+		throw SocketException();
+	}else{
+		return 0;
+	}
 }
 
 Socket* Socket::accept(){
