@@ -26,6 +26,7 @@ public:
 	int send(const string msg);
 	int send(const char* msg);
 	const char* recv();
+	int listen();
 	int listen(const char* port);
 	int listen(const unsigned short port);
 	Socket* accept();

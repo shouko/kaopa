@@ -70,6 +70,10 @@ int Socket::send(const char* msg){
 	return ::send(sockfd, msg, strlen(msg), 0);
 }
 
+int Socket::listen(){
+	return this->listen(((const unsigned short)0));
+}
+
 int Socket::listen(const char* port){
 	return this->listen(atoi(port));
 }
@@ -109,11 +113,11 @@ const unsigned short Socket::getlocalport(){
 	if(!this->isconnected()){
 		throw SocketException();
 	}
-	struct sockaddr_in local_sockaddr;
-	socklen_t len;
-	len = sizeof(struct sockaddr_in);
-	if(getsockname(sockfd, &local_sockaddr, &len)==-1) {
+	struct sockaddr local_sockaddr;
+	memset(&local_sockaddr, 0, sizeof local_sockaddr);
+	socklen_t len = sizeof(struct sockaddr_in);
+	if(::getsockname(sockfd, &local_sockaddr, &len)==-1){
 	  throw SocketException();
 	}
-	return local_sockaddr.sin_port;
+	return ntohs(((struct sockaddr_in*)&local_sockaddr)->sin_port);
 }
