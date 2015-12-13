@@ -29,7 +29,7 @@ public:
 	int listen(const char* port);
 	int listen(const unsigned short port);
 	Socket* accept();
-	bool isConnected();
+	bool isconnected();
 private:
 	int sockfd;
 	char recv_buf[MAX_BUF];

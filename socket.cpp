@@ -61,7 +61,7 @@ int Socket::send(const string msg){
 }
 
 int Socket::send(const char* msg){
-	if(!this->isConnected()){
+	if(!this->isconnected()){
 		throw SocketException();
 	}
 #ifdef DEBUG
@@ -90,7 +90,7 @@ int Socket::listen(const unsigned short port){
 }
 
 Socket* Socket::accept(){
-	if(!this->isConnected()){
+	if(!this->isconnected()){
 		throw SocketException();
 	}
 	int clientfd;
@@ -101,6 +101,6 @@ Socket* Socket::accept(){
 	return new Socket(clientfd);
 }
 
-bool Socket::isConnected(){
+bool Socket::isconnected(){
 	return sockfd != -1;
 }
