@@ -30,6 +30,7 @@ public:
 	int listen(const unsigned short port);
 	Socket* accept();
 	bool isconnected();
+	const unsigned short getlocalport();
 private:
 	int sockfd;
 	char recv_buf[MAX_BUF];

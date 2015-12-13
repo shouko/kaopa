@@ -104,3 +104,16 @@ Socket* Socket::accept(){
 bool Socket::isconnected(){
 	return sockfd != -1;
 }
+
+const unsigned short Socket::getlocalport(){
+	if(!this->isconnected()){
+		throw SocketException();
+	}
+	struct sockaddr_in local_sockaddr;
+	socklen_t len;
+	len = sizeof(struct sockaddr_in);
+	if(getsockname(sockfd, &local_sockaddr, &len)==-1) {
+	  throw SocketException();
+	}
+	return local_sockaddr.sin_port;
+}
