@@ -1,5 +1,5 @@
-#ifndef __SOCKET_H__
-#define __SOCKET_H__
+#ifndef __SOCKET__
+#define __SOCKET__
 #define MAX_BUF 1024
 #include <iostream>
 #include <string.h>
@@ -35,5 +35,27 @@ public:
 private:
 	int sockfd;
 	char recv_buf[MAX_BUF];
+};
+#endif
+
+#ifndef __SAFE_QUEUE__
+#define __SAFE_QUEUE__
+
+#include <queue>
+#include <mutex>
+#include <condition_variable>
+
+template <class T>
+class SafeQueue
+{
+public:
+  SafeQueue(void) : q(), m(), c() {}
+  ~SafeQueue(void) {}
+  void push(T t);
+  T pop(void);
+private:
+  std::queue<T> q;
+  mutable std::mutex m;
+  std::condition_variable c;
 };
 #endif
