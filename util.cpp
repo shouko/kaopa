@@ -121,22 +121,18 @@ const unsigned short Socket::getlocalport(){
 	}
 	return ntohs(((struct sockaddr_in*)&local_sockaddr)->sin_port);
 }
-
-void SafeQueue::push(T t)
-{
-	std::lock_guard<std::mutex> lock(m);
-	q.push(t);
-	c.notify_one();
+vector<string>* split(const char* str, const char* del){
+	char* str_nc = strdup(str);
+	char* del_nc = strdup(del);
+	return split(str_nc, del_nc);
 }
-
-T SafeQueue::pop(void)
-{
-	std::unique_lock<std::mutex> lock(m);
-	while(q.empty())
-	{
-		c.wait(lock);
+vector<string>* split(char* str, char* del){
+	vector<string>* res = new vector<string>;
+	char* buf = str;
+	char* ptr = NULL;
+	char* entry;
+	while((entry = strtok_r(buf, del, &ptr)) != NULL){
+		res->push_back(entry);
 	}
-	T val = q.front();
-	q.pop();
-	return val;
+	return res;
 }

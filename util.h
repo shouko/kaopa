@@ -1,6 +1,6 @@
-using namespace std;
 #include <iostream>
 #include <string.h>
+using namespace std;
 
 #ifndef __SOCKET__
 #define __SOCKET__
@@ -53,8 +53,22 @@ class SafeQueue
 public:
   SafeQueue(void) : q(), m(), c() {}
   ~SafeQueue(void) {}
-  void push(T t);
-  T pop(void);
+	void push(T t){
+		std::lock_guard<std::mutex> lock(m);
+		q.push(t);
+		c.notify_one();
+	}
+
+	T pop(void){
+		std::unique_lock<std::mutex> lock(m);
+		while(q.empty())
+		{
+			c.wait(lock);
+		}
+		T val = q.front();
+		q.pop();
+		return val;
+	}
 private:
   std::queue<T> q;
   mutable std::mutex m;
@@ -67,11 +81,13 @@ private:
 
 #include <vector>
 
-vector<string>& split(const string str, const str del){
-	return split(str.c_str(), del.c_str());
-}
+vector<string>* split(const char* str, const char* del);
+vector<string>* split(char* str, char* del);
+#endif
 
-vector<string>& split(const char* str, const char* del){
-
-}
+#ifndef __PAYMENT__
+#define __PAYMENT__
+#define PAYMENT_FROM 0
+#define PAYMENT_AMOUNT 1
+#define PAYMENT_TO 2
 #endif
