@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string.h>
 #include <thread>
-#include "socket.h"
+#include "util.h"
 using namespace std;
 
 void process_payment(Socket* s){
@@ -23,8 +23,11 @@ int main(int argc, char* argv[]){
 	}
 
 	Socket* p = new Socket();
-	p->listen(8886);
+	p->listen();
+	int local_port = p->getlocalport();
 	thread (wait_payment, p).detach();
+
+	cout << "Listening on local port " << local_port;
 
 	Socket s(argv[1], argv[2]);
 	s.recv();

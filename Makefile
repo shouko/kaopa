@@ -25,19 +25,19 @@ client: MAKEFLAGS = $(CFLAGS)
 client: $(OUTDIR)/main_client.o
 server: MAKEFLAGS = $(CFLAGS)
 server: $(OUTDIR)/main_server.o
-$(EXEC): $(OUTDIR)/socket.o
-	cd $(OUTDIR); g++ -o $@ $(MAKEFLAGS) main_$@.o socket.o
+$(EXEC): $(OUTDIR)/util.o
+	cd $(OUTDIR); g++ -o $@ $(MAKEFLAGS) main_$@.o util.o
 	strip $(OUTDIR)/$@
 
-#server: $(OUTDIR)/main_server.o $(OUTDIR)/socket.o
-#	cd $(OUTDIR); g++ -o $@ $(MAKEFLAGS) main_server.o socket.o
+#server: $(OUTDIR)/main_server.o $(OUTDIR)/util.o
+#	cd $(OUTDIR); g++ -o $@ $(MAKEFLAGS) main_server.o util.o
 #	strip $(OUTDIR)/$@
 
 ################
 # Object files #
 ################
 
-$(OUTDIR)/%.o: %.cpp socket.h
+$(OUTDIR)/%.o: %.cpp util.h
 	@mkdir -p $(OUTDIR)
 	g++ -c $(MAKEFLAGS) $< -o $@
 
