@@ -1,13 +1,15 @@
+using namespace std;
+#include <iostream>
+#include <string.h>
+
 #ifndef __SOCKET__
 #define __SOCKET__
 #define MAX_BUF 1024
-#include <iostream>
-#include <string.h>
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <stdexcept>
-using namespace std;
 
 class SocketException : public exception{
 public:
@@ -58,4 +60,18 @@ private:
   mutable std::mutex m;
   std::condition_variable c;
 };
+#endif
+
+#ifndef __SPLIT__
+#define __SPLIT__
+
+#include <vector>
+
+vector<string>& split(const string str, const str del){
+	return split(str.c_str(), del.c_str());
+}
+
+vector<string>& split(const char* str, const char* del){
+
+}
 #endif
