@@ -4,32 +4,36 @@
 #include "util.h"
 using namespace std;
 
-void process_payment(Socket* s){
-	s->recv();
-	s->send("Good!");
-	delete s;
-}
+SafeQueue<vector<string>*> cmdQueue;
 
-void wait_payment(Socket* s){
+void payment_accept(Socket* s){
 	while(1){
-		thread (process_payment, s->accept()).detach();
+		Socket* c = s->accept();
+		vector<string>* payment_data = split(c->recv(), "#");
+		if(payment_data->size() != 3){
+			cmdQueue.push(payment_data);
+			c->send("100 OK");
+		}
+		delete c;
 	}
 }
 
 int main(int argc, char* argv[]){
-	if(argc < 3){
-		cerr << "Usage: " << argv[0] << " <hostname> <port>" << endl;
-		return 0;
-	}
-
 	Socket* p = new Socket();
 	p->listen();
 	int local_port = p->getlocalport();
-	thread (wait_payment, p).detach();
+	thread (payment_accept, p).detach();
+	cout << "Listening on local port " << local_port << endl;
 
-	cout << "Listening on local port " << local_port;
-
-	Socket s(argv[1], argv[2]);
+	string remote_host;
+	cout << "Please enter remote hostname: ";
+	cin >> remote_host;
+	Socket s(remote_host.c_str(), "8889");
+	s.recv();
+	string username;
+	cout << "Please enter your username: ";
+	cin >> username;
+	s.send(username + "#" + to_string(local_port) + "\n");
 	s.recv();
 	string input, toSend;
 	int withLf;
