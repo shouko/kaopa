@@ -81,6 +81,7 @@ private:
 
 #include <vector>
 
+vector<string>* split(string str, string del);
 vector<string>* split(const char* str, const char* del);
 vector<string>* split(char* str, char* del);
 #endif
