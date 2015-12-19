@@ -30,7 +30,8 @@ public:
 private:
 	string username;
 	int balance;
-	int port;
+	string ip;
+	unsigned short port;
 	bool online;
 };
 
