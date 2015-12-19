@@ -292,7 +292,7 @@ int main(int argc, char* argv[]){
 	int local_port = p->getlocalport();
 	thread (payment_accept, p).detach();
 
-	char host[20], command[20], username[20];
+	char host[31], username[21];
 
 	tui_init();
 	print_welcome();
@@ -300,7 +300,7 @@ int main(int argc, char* argv[]){
 	attron(COLOR_PAIR(3));
 	mvprintw(19, 20, "          ");
 	move(19, 20);
-	getnstr(host, 20);
+	getnstr(host, 30);
 	attroff(COLOR_PAIR(3));
 	Client client(host, "8889");
 	client.setlocalport(local_port);
