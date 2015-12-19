@@ -237,6 +237,7 @@ bool ask_leave(){
 }
 
 int menu_command(char menu[][2][16], int items, int initial = 0){
+	noecho();
 	int jump_table[26] = {0};
 	for(int i = 0; i < items; i++){
 		int y = 13 + i;
@@ -253,7 +254,6 @@ int menu_command(char menu[][2][16], int items, int initial = 0){
 		printw(" ");
 		mvprintw(13 + curpos, 20, ">");
 		move(13 + curpos, 20);
-		noecho();
 		int key = getch();
 		switch(key){
 			default:
@@ -278,6 +278,7 @@ int menu_command(char menu[][2][16], int items, int initial = 0){
 			case KEY_ENTER:
 				printw(" ");
 				selecting = 0;
+				echo();
 				return curpos;
 		}
 		curpos %= items;
