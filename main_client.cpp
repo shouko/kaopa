@@ -27,6 +27,21 @@ private:
 	int balance;
 	int local_port;
 	map<string,User> users;
+	void parse_list(const char* list){
+		stringstream ss(list);
+		int online_users;
+		ss >> balance >> online_users;
+		string user_info;
+		User user;
+		users.erase(users.begin(), users.end());
+		while(ss >> user_info){
+			stringstream uss(user_info);
+			getline(uss, user.username, '#');
+			getline(uss, user.ip, '#');
+			getline(uss, user.port, '\n');
+			users.insert(make_pair(user.username, user));
+		}
+	}
 
 public:
 	Client(string remote_host, const char* port) : remote_host(remote_host), username(""), balance(UNSPEC_BALANCE), local_port(0){
@@ -42,26 +57,12 @@ public:
 	}
 	int login(){
 		s->send(username + "#" + to_string(local_port) + "\n");
-		getch();
-		return 0;
-		/*
+		const char* list = s->recv();
 		if(list[3] == ' '){
 			return -1;
 		}
-		stringstream ss(list);
-		int online_users;
-		ss >> balance >> online_users;
-		string user_info;
-		User user;
-		while(ss >> user_info){
-			stringstream uss(user_info);
-			getline(uss, user.username, '#');
-			getline(uss, user.ip, '#');
-			getline(uss, user.port, '\n');
-			users.insert(make_pair(user.username, user));
-		}
+		parse_list(list);
 		return 0;
-		*/
 	}
 	int reg(string username){
 		s->send("REGISTER#" + username + "\n");
@@ -76,6 +77,10 @@ public:
 		this->username = username;
 		return login();
 	}
+	void bye(){
+		s->send("Exit\n");
+		s->recv();
+	}
 	bool is_loggedin(){
 		return (balance != UNSPEC_BALANCE);
 	}
@@ -85,11 +90,15 @@ public:
 	const char* recv(){
 		return s->recv();
 	}
+	void fetch_list(){
+
+	}
 };
 
 void tui_init(){
 	setlocale(LC_ALL,"");
 	initscr();
+	keypad(stdscr, true);
 	start_color();
 	init_pair(1, COLOR_WHITE, COLOR_BLUE); // title
 	init_pair(2, COLOR_YELLOW, COLOR_BLUE); // app title
@@ -98,6 +107,17 @@ void tui_init(){
 	init_pair(5, COLOR_RED, COLOR_WHITE); // reverse important
 	init_pair(6, COLOR_YELLOW, COLOR_MAGENTA); // weather
 	init_pair(7, COLOR_CYAN, COLOR_BLACK); // menu
+}
+
+void get_weather(char* weather){
+	Socket s("w.ntu.im", "80");
+	s.send("GET /~b102020/kaopa.php?f=weather HTTP/1.0\n\n");
+	string data(s.recv());
+	stringstream wss(data);
+	string wstr;
+	getline(wss, wstr, '#');
+	getline(wss, wstr, '#');
+	strncpy(weather, wstr.c_str(), 19);
 }
 
 void print_block(int y, int x, int height, string graph[]){
@@ -115,7 +135,25 @@ void print_welcome(){
 	print_block(5, 55, 3, ascii_art::rabbit);
 }
 
+void print_title(const char* title){
+	attron(COLOR_PAIR(1));
+	mvprintw(0, 0, "【主功能表】");
+	attroff(COLOR_PAIR(1));
+}
+
+void print_header(const char* title){
+	attron(COLOR_PAIR(1));
+	mvprintw(0, 0, EMPTY_LINE);
+	attroff(COLOR_PAIR(1));
+	print_title(title);
+	attron(COLOR_PAIR(2));
+	mvprintw(0, 37, "カオパ");
+	attroff(COLOR_PAIR(2));
+}
+
 void print_statusbar(const int online_users, const char* username){
+	char* weather = new char[20];
+	thread weather_thread(get_weather, weather);
 	attron(COLOR_PAIR(3));
 	mvprintw(23, 0, EMPTY_LINE);
 	attroff(COLOR_PAIR(3));
@@ -123,7 +161,7 @@ void print_statusbar(const int online_users, const char* username){
 	mvprintw(23, 0, "[12/19 星期六 22:24]");
 	attroff(COLOR_PAIR(4));
 	attron(COLOR_PAIR(6));
-	printw(" [ 晴時多雲 ]  ");
+	printw("               ");
 	attroff(COLOR_PAIR(6));
 	attron(COLOR_PAIR(3));
 	printw(" 線上");
@@ -137,6 +175,10 @@ void print_statusbar(const int online_users, const char* username){
 	attron(COLOR_PAIR(5));
 	printw("%s", username);
 	attroff(COLOR_PAIR(5));
+	weather_thread.join();
+	attron(COLOR_PAIR(6));
+	mvprintw(23, 20, " [ %s ]  ", weather);
+	attroff(COLOR_PAIR(6));
 }
 
 void payment_accept(Socket* s){
@@ -156,6 +198,68 @@ void mvprint_menukey(const int y, const int x, const char key){
 	attron(COLOR_PAIR(7));
 	printw("%c", key);
 	attroff(COLOR_PAIR(7));
+}
+
+bool ask_leave(){
+	char yes[2] = {0};
+	mvprintw(22, 0, "您確定要離開 [ カオパ ] 嗎(Y/N)？[N] ");
+	attron(COLOR_PAIR(3));
+	mvprintw(22, 37, "   ");
+	move(22, 37);
+	getnstr(yes, 1);
+	attroff(COLOR_PAIR(3));
+	if(yes[0] == 'y' || yes[0] == 'Y'){
+		return 1;
+	}else{
+		move(22, 0);
+		clrtoeol();
+		return 0;
+	}
+}
+
+int menu_command(char menu[][2][16], int items, int initial = 0){
+	int jump_table[26] = {0};
+	for(int i = 0; i < items; i++){
+		int y = 13 + i;
+		mvprintw(y, 22, "( )%s", menu[i][0] + 1);
+		mvprintw(y, 39, "[          ]");
+		mvprintw(y, 41, "%s", menu[i][1]);
+		mvprint_menukey(y, 23, menu[i][0][0]);
+		jump_table[menu[i][0][0] - 'A'] = i;
+	}
+	move(13, 20);
+	int curpos = initial;
+	bool selecting = 1;
+	while(selecting){
+		printw(" ");
+		mvprintw(13 + curpos, 20, ">");
+		move(13 + curpos, 20);
+		int key = getch();
+		switch(key){
+			default:
+				if(key >= 'a' && key <= 'z'){
+					key -= 'a';
+				}else if(key >= 'A' && key <= 'Z'){
+					key -= 'A';
+				}else{
+					break;
+				}
+				curpos = jump_table[key];
+			case KEY_UP:
+				curpos += (-1 + items);
+				break;
+			case KEY_DOWN:
+				curpos += 1;
+				break;
+			case KEY_RIGHT:
+			case '\r':
+			case '\n':
+			case KEY_ENTER:
+				selecting = 0;
+				return curpos;
+		}
+		curpos %= items;
+	}
 }
 
 int main(int argc, char* argv[]){
@@ -206,29 +310,41 @@ int main(int argc, char* argv[]){
 	}
 
 	erase();
-	attron(COLOR_PAIR(1));
-	mvprintw(0, 0, EMPTY_LINE);
-	mvprintw(0, 1, "【主功能表】");
-	attroff(COLOR_PAIR(1));
-	attron(COLOR_PAIR(2));
-	mvprintw(0, 37, "カオパ");
-	attroff(COLOR_PAIR(2));
+	print_header("主功能表");
 	print_welcome();
 //	mvprintw(9, 5, "\033[1;33m草蜢\033[m\n");
-	mvprintw(13, 20, "(A)nnounce    [ 系統公告   ]");
-	mvprint_menukey(13, 21, 'A');
-	mvprintw(14, 20, "(L)ist        [ 使用者列表 ]");
-	mvprint_menukey(14, 21, 'L');
-	mvprintw(15, 20, "(G)oodbye     [ 離開       ]");
-	mvprint_menukey(15, 21, 'G');
 	print_statusbar(112, username);
-	mvprintw(14, 18, ">");
-	move(14, 18);
-	while(1){
-		getnstr(command, 20);
-		client.send(command);
-		printw(client.recv());
+
+	char main_menu[3][2][16] = {
+		{"Announce", "系統公告"},
+		{"List", "用戶列表"},
+		{"Goodbye", "離開"}
+	};
+
+	int cmd = 0;
+	bool run = 1;
+	while(run){
+		cmd = menu_command(main_menu, 3, cmd);
+		switch(cmd){
+			case 0:
+				break;
+			case 1:
+				client.fetch_list();
+				break;
+			case 2:
+				if(ask_leave()){
+					client.bye();
+					run = 0;
+				}
+				break;
+		}
 	}
+
+/*
+	getnstr(command, 20);
+	client.send(command);
+	printw(client.recv());
+*/
   getch();
 	endwin();
 	return 0;
