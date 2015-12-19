@@ -84,6 +84,9 @@ public:
 	bool is_loggedin(){
 		return (balance != UNSPEC_BALANCE);
 	}
+	int get_onlineusers(){
+		return users.size();
+	}
 	int send(const char* command){
 		return s->send(command);
 	}
@@ -91,7 +94,8 @@ public:
 		return s->recv();
 	}
 	void fetch_list(){
-
+		s->send("List\n");
+		parse_list(s->recv());
 	}
 };
 
@@ -234,6 +238,7 @@ int menu_command(char menu[][2][16], int items, int initial = 0){
 		printw(" ");
 		mvprintw(13 + curpos, 20, ">");
 		move(13 + curpos, 20);
+		noecho();
 		int key = getch();
 		switch(key){
 			default:
@@ -245,6 +250,7 @@ int menu_command(char menu[][2][16], int items, int initial = 0){
 					break;
 				}
 				curpos = jump_table[key];
+				break;
 			case KEY_UP:
 				curpos += (-1 + items);
 				break;
@@ -255,6 +261,7 @@ int menu_command(char menu[][2][16], int items, int initial = 0){
 			case '\r':
 			case '\n':
 			case KEY_ENTER:
+				printw(" ");
 				selecting = 0;
 				return curpos;
 		}
@@ -313,7 +320,7 @@ int main(int argc, char* argv[]){
 	print_header("主功能表");
 	print_welcome();
 //	mvprintw(9, 5, "\033[1;33m草蜢\033[m\n");
-	print_statusbar(112, username);
+	print_statusbar(client.get_onlineusers(), username);
 
 	char main_menu[3][2][16] = {
 		{"Announce", "系統公告"},
@@ -330,6 +337,7 @@ int main(int argc, char* argv[]){
 				break;
 			case 1:
 				client.fetch_list();
+				print_statusbar(client.get_onlineusers(), username);
 				break;
 			case 2:
 				if(ask_leave()){
