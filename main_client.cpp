@@ -310,7 +310,11 @@ int main(int argc, char* argv[]){
 	move(19, 20);
 	getnstr(host, 30);
 	attroff(COLOR_PAIR(3));
-	Client client(host, "8889");
+	char port[6] = "8889";
+	if(argc > 1){
+		strncpy(port, argv[1], 5);
+	}
+	Client client(host, port);
 	client.setlocalport(local_port);
 
 	while(1){
