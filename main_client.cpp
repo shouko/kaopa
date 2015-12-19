@@ -12,13 +12,19 @@
 #define EMPTY_LINE "                                                                                "
 using namespace std;
 
-SafeQueue<vector<string>*> cmdQueue;
-
 struct User{
 	string username;
 	string ip;
 	string port;
 };
+
+struct Payment{
+	string user_from;
+	string amount;
+	string user_to;
+};
+
+SafeQueue<Payment> paymentQueue;
 
 class Client{
 private:
@@ -203,11 +209,13 @@ void print_statusbar(const int online_users, const char* username){
 void payment_accept(Socket* s){
 	while(1){
 		Socket* c = s->accept();
-		vector<string>* payment_data = split(c->recv(), "#");
-		if(payment_data->size() != 3){
-			cmdQueue.push(payment_data);
-			c->send("100 OK");
-		}
+		stringstream ps(c->recv());
+		Payment payment_data;
+		getline(ps, payment_data.user_from, '#');
+		getline(ps, payment_data.amount, '#');
+		getline(ps, payment_data.user_to, '\n');
+		paymentQueue.push(payment_data);
+		c->send("100 OK");
 		delete c;
 	}
 }

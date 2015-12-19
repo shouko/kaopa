@@ -121,22 +121,3 @@ const unsigned short Socket::getlocalport(){
 	}
 	return ntohs(((struct sockaddr_in*)&local_sockaddr)->sin_port);
 }
-
-vector<string>* split(string str, string del){
-	return split(str.c_str(), del.c_str());
-}
-vector<string>* split(const char* str, const char* del){
-	char* str_nc = strdup(str);
-	char* del_nc = strdup(del);
-	return split(str_nc, del_nc);
-}
-vector<string>* split(char* str, char* del){
-	vector<string>* res = new vector<string>;
-	char* buf = str;
-	char* ptr = NULL;
-	char* entry;
-	while((entry = strtok_r(buf, del, &ptr)) != NULL){
-		res->push_back(entry);
-	}
-	return res;
-}

@@ -76,16 +76,6 @@ private:
 };
 #endif
 
-#ifndef __SPLIT__
-#define __SPLIT__
-
-#include <vector>
-
-vector<string>* split(string str, string del);
-vector<string>* split(const char* str, const char* del);
-vector<string>* split(char* str, char* del);
-#endif
-
 #ifndef __PAYMENT__
 #define __PAYMENT__
 #define PAYMENT_FROM 0
