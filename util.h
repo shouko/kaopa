@@ -8,6 +8,7 @@ using namespace std;
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #include <netdb.h>
 #include <stdexcept>
 
@@ -34,6 +35,7 @@ public:
 	Socket* accept();
 	bool isconnected();
 	const unsigned short getlocalport();
+	const char* getremoteip();
 private:
 	int sockfd;
 	char recv_buf[MAX_BUF];

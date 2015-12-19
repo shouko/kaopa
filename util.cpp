@@ -121,3 +121,11 @@ const unsigned short Socket::getlocalport(){
 	}
 	return ntohs(((struct sockaddr_in*)&local_sockaddr)->sin_port);
 }
+
+const char* Socket::getremoteip(){
+  struct sockaddr_in addr;
+  socklen_t addr_size = sizeof(struct sockaddr_in);
+  int res = ::getpeername(sockfd, (struct sockaddr *)&addr, &addr_size);
+  char* remote_ip = new char[20];
+  return inet_ntoa(addr.sin_addr);
+}
