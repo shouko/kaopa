@@ -5,6 +5,7 @@
 #include <sstream>
 #include <ncurses.h>
 #include <locale.h>
+#include <time.h>
 #include "util.h"
 #include "ascii_art.h"
 #define UNSPEC_BALANCE -100000
@@ -55,9 +56,21 @@ public:
 		this->local_port = local_port;
 		return 0;
 	}
+	int send(const char* command){
+		return s->send(command);
+	}
+	const char* recv(){
+		return s->recv();
+	}
+	const char* exec(const char* command){
+		s->send(command);
+		return s->recv();
+	}
+	const char* exec(string command){
+		return exec(command.c_str());
+	}
 	int login(){
-		s->send(username + "#" + to_string(local_port) + "\n");
-		const char* list = s->recv();
+		const char* list = exec(username + "#" + to_string(local_port) + "\n");
 		if(list[3] == ' '){
 			return -1;
 		}
@@ -65,8 +78,7 @@ public:
 		return 0;
 	}
 	int reg(string username){
-		s->send("REGISTER#" + username + "\n");
-		if(s->recv()[0] == '1'){
+		if(exec("REGISTER#" + username + "\n")[0] == '1'){
 			this->username = username;
 			return login();
 		}else{
@@ -87,15 +99,8 @@ public:
 	int get_onlineusers(){
 		return users.size();
 	}
-	int send(const char* command){
-		return s->send(command);
-	}
-	const char* recv(){
-		return s->recv();
-	}
 	void fetch_list(){
-		s->send("List\n");
-		parse_list(s->recv());
+		parse_list(exec("List\n"));
 	}
 };
 
@@ -155,6 +160,8 @@ void print_header(const char* title){
 	attroff(COLOR_PAIR(2));
 }
 
+char* weekday_str[7] = {"日", "一", "二", "三", "四", "五", "六"};
+
 void print_statusbar(const int online_users, const char* username){
 	char* weather = new char[20];
 	thread weather_thread(get_weather, weather);
@@ -162,7 +169,15 @@ void print_statusbar(const int online_users, const char* username){
 	mvprintw(23, 0, EMPTY_LINE);
 	attroff(COLOR_PAIR(3));
 	attron(COLOR_PAIR(4));
-	mvprintw(23, 0, "[12/19 星期六 22:24]");
+	time_t rawtime;
+	struct tm* timeinfo;
+	char time_buffer[80];
+	time(&rawtime);
+	timeinfo = localtime(&rawtime);
+	strftime(time_buffer, 80, "%w", timeinfo);
+	int weekday_index = (int)time_buffer[0] - (int)'0';
+	strftime(time_buffer, 80, "[%m/%d 星期%%s %R]", timeinfo);
+	mvprintw(23, 0, time_buffer, weekday_str[weekday_index]);
 	attroff(COLOR_PAIR(4));
 	attron(COLOR_PAIR(6));
 	printw("               ");
