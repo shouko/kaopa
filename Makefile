@@ -26,7 +26,7 @@ client: $(OUTDIR)/main_client.o
 server: MAKEFLAGS = $(CFLAGS)
 server: $(OUTDIR)/main_server.o
 $(EXEC): $(OUTDIR)/util.o
-	cd $(OUTDIR); g++ -o $@ $(MAKEFLAGS) main_$@.o util.o
+	cd $(OUTDIR); g++ -o $@ $(MAKEFLAGS) -lncurses main_$@.o util.o
 	strip $(OUTDIR)/$@
 
 #server: $(OUTDIR)/main_server.o $(OUTDIR)/util.o
