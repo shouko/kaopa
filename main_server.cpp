@@ -3,6 +3,7 @@
 #include <thread>
 #include <map>
 #include <sstream>
+#include <fstream>
 #include "util.h"
 using namespace std;
 
@@ -13,7 +14,7 @@ public:
 	string ip;
 	string port;
 	bool online;
-	User(string username) : username(username), balance(1000), port(""), online(0) {
+	User(string username, int balance = 1000) : username(username), balance(balance), port(""), online(0) {
 	}
 	~User(){
 	}
@@ -30,6 +31,27 @@ public:
 
 map<string, User> users;
 map<string, User*> users_online;
+
+int import_users(string fn){
+	ifstream ifs(fn);
+	string user_data = "";
+	while(ifs >> user_data){
+		stringstream ss(user_data);
+		string username;
+		int balance;
+		getline(ss, username, '#');
+		ss >> balance;
+		User user(username, balance);
+		users.insert(make_pair(username, user));
+	}
+}
+
+int export_users(string fn){
+	ofstream ofs(fn);
+	for(map<string, User>::iterator it = users.begin(); it != users.end(); it++){
+		ofs << it->second.username << '#' << it->second.balance << '\n';
+	}
+}
 
 int send_list(User* current_user, Socket* c){
 	string uol_str = "";
@@ -122,6 +144,18 @@ int main(int argc, char* argv[]){
 	thread (connection_accept, s).detach();
 	cout << "Listening on local port " << local_port << endl;
 	char x;
-	cin >> x;
+	while(cin >> x){
+		if(x == 'i'){
+			cout << "Importing user data..." << endl;
+			import_users("data_server.txt");
+			cout << "Imported user data." << endl;
+		}else if(x == 'q'){
+			cout << "Server shutting down..." << endl;
+			cout << "Exporting user data..." << endl;
+			export_users("data_server.txt");
+			cout << "Exported user data." << endl;
+			break;
+		}
+	}
 	return 0;
 }
