@@ -12,6 +12,17 @@ CFLAGS += -DDEBUG
 endif
 
 ###############
+# Libraries #
+###############
+
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+LIBFLAGS = -lncurses
+else
+LIBFLAGS = -lncursesw -pthread
+endif
+
+###############
 # PHONY rules #
 ###############
 .PHONY: all
@@ -26,7 +37,7 @@ client: $(OUTDIR)/main_client.o
 server: MAKEFLAGS = $(CFLAGS)
 server: $(OUTDIR)/main_server.o
 $(EXEC): $(OUTDIR)/util.o
-	cd $(OUTDIR); g++ -o $@ $(MAKEFLAGS) main_$@.o util.o -lncurses -pthread
+	cd $(OUTDIR); g++ -o $@ $(MAKEFLAGS) main_$@.o util.o $(LIBFLAGS)
 	strip $(OUTDIR)/$@
 
 #server: $(OUTDIR)/main_server.o $(OUTDIR)/util.o
