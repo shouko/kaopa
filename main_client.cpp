@@ -350,8 +350,10 @@ int main(int argc, char* argv[]){
 //	mvprintw(9, 5, "\033[1;33m草蜢\033[m\n");
 	print_statusbar(client.get_onlineusers(), username);
 
-	char main_menu[3][2][16] = {
+	char main_menu[5][2][16] = {
 		{"Announce", "系統公告"},
+		{"Pay", "發起付款"},
+		{"History", "交易紀錄"},
 		{"List", "用戶列表"},
 		{"Goodbye", "離開"}
 	};
@@ -359,15 +361,16 @@ int main(int argc, char* argv[]){
 	int cmd = 0;
 	bool run = 1;
 	while(run){
-		cmd = menu_command(main_menu, 3, cmd);
+		cmd = menu_command(main_menu, 5, cmd);
 		switch(cmd){
+			default:
 			case 0:
 				break;
-			case 1:
+			case 3:
 				client.fetch_list();
 				print_statusbar(client.get_onlineusers(), username);
 				break;
-			case 2:
+			case 4:
 				if(ask_leave()){
 					client.bye();
 					run = 0;
