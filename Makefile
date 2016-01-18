@@ -21,6 +21,7 @@ LIBFLAGS = -lncurses
 else
 LIBFLAGS = -lncursesw -pthread
 endif
+LIBFLABS += -lcrypto -lssl
 
 ###############
 # PHONY rules #

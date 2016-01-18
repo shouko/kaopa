@@ -12,6 +12,8 @@ using namespace std;
 #include <netdb.h>
 #include <unistd.h>
 #include <stdexcept>
+#include "openssl/ssl.h"
+#include "openssl/err.h"
 
 class SocketException : public exception{
 public:
@@ -37,9 +39,23 @@ public:
 	bool isconnected();
 	const unsigned short getlocalport();
 	const char* getremoteip();
-private:
+protected:
 	int sockfd;
 	char recv_buf[MAX_BUF];
+friend class SecureSocket;
+};
+
+class SecureSocket : public socket{
+public:
+	SecureSocket(const char* hostname, const char* port);
+	SecureSocket(const int sockfd, const SSL* ssl) : sockfd(sockfd), ssl(ssl) {}
+	~SecureSocket();
+	int send(const char* msg);
+	const char* recv();
+private:
+	static SSL_CTX* ctx;
+	static bool openssl_lib_loaded;
+	SSL* ssl;
 };
 #endif
 

@@ -128,3 +128,73 @@ const char* Socket::getremoteip(){
   ::getpeername(sockfd, (struct sockaddr *)&addr, &addr_size);
   return inet_ntoa(addr.sin_addr);
 }
+
+bool SecureSocket::openssl_lib_loaded = false;
+
+SecureSocket::SecureSocket(){
+	if(!openssl_lib_loaded){
+		init_ssl_ctx();
+		openssl_lib_loaded = true;
+	}
+}
+
+SecureSocket::~SecureSocket(){
+	SSL_free(ssl);         /* release SSL state */
+	Socket::~Socket();
+}
+
+SecureSocket::init_ssl_ctx(char* cert_fn, char* key_fn){
+	SSL_library_init();
+	const SSL_METHOD* method = SSLv3_server_method();
+	OpenSSL_add_all_algorithms();
+	SSL_load_error_strings();
+	ctx = SSL_CTX_new(method);
+	if(ctx == NULL){
+		ERR_print_errors_fp(stderr);
+		abort();
+	}
+	//set local certificate
+	if(SSL_CTX_use_certificate_file(ctx, cert_fn, SSL_FILETYPE_PEM) <= 0){
+		ERR_print_errors_fp(stderr);
+		abort();
+	}
+	//set private key
+	if(SSL_CTX_use_PrivateKey_file(ctx, key_fn, SSL_FILETYPE_PEM) <= 0){
+		ERR_print_errors_fp(stderr);
+		abort();
+	}
+	//verify private key
+	if(!SSL_CTX_check_private_key(ctx)){
+		fprintf(stderr, "Private key does not match the public certificate\n");
+		abort();
+	}
+}
+
+SecureSocket* SecureSocket::accept(){
+	Socket* client_socket = Socket::accept();
+	int client_sockfd = client_socket->sockfd;
+	SSL* ssl = SSL_new(ctx);              // get new SSL state with context
+	SSL_set_fd(ssl, client_sockfd);
+	switch(SSL_accept(ssl)){
+		case 0:
+			throw new SocketException();
+		case 1:
+			return new SecureSocket(client_sockfd, ssl);
+		default:
+			ERR_print_errors_fp(stderr);
+			throw new SocketException();
+	}
+}
+
+const char* SecureSocket:recv(){
+	if(SSL_read(ssl, recv_buf, MAX_BUF) > 0){
+		return recv_buf;
+	}else{
+		return "";
+		ERR_print_errors_fp(stderr);
+	}
+}
+
+int SecureSocket::send(const char* msg){
+	return SSL_write(ssl, msg, strlen(msg));
+}
