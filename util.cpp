@@ -130,20 +130,21 @@ const char* Socket::getremoteip(){
 }
 
 bool SecureSocket::openssl_lib_loaded = false;
+SSL_CTX* SecureSocket::ctx = NULL;
 
 SecureSocket::SecureSocket(){
 	if(!openssl_lib_loaded){
-		init_ssl_ctx();
+		init_ssl_ctx("cert.crt", "cert.key");
 		openssl_lib_loaded = true;
 	}
 }
 
 SecureSocket::~SecureSocket(){
-	SSL_free(ssl);         /* release SSL state */
+	SSL_free(ssl);
 	Socket::~Socket();
 }
 
-SecureSocket::init_ssl_ctx(char* cert_fn, char* key_fn){
+int SecureSocket::init_ssl_ctx(const char* cert_fn, const char* key_fn){
 	SSL_library_init();
 	const SSL_METHOD* method = SSLv3_server_method();
 	OpenSSL_add_all_algorithms();
@@ -168,6 +169,7 @@ SecureSocket::init_ssl_ctx(char* cert_fn, char* key_fn){
 		fprintf(stderr, "Private key does not match the public certificate\n");
 		abort();
 	}
+	return 0;
 }
 
 SecureSocket* SecureSocket::accept(){
@@ -186,7 +188,7 @@ SecureSocket* SecureSocket::accept(){
 	}
 }
 
-const char* SecureSocket:recv(){
+const char* SecureSocket::recv(){
 	if(SSL_read(ssl, recv_buf, MAX_BUF) > 0){
 		return recv_buf;
 	}else{

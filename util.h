@@ -45,17 +45,20 @@ protected:
 friend class SecureSocket;
 };
 
-class SecureSocket : public socket{
+class SecureSocket : public Socket{
 public:
+	SecureSocket();
 	SecureSocket(const char* hostname, const char* port);
-	SecureSocket(const int sockfd, const SSL* ssl) : sockfd(sockfd), ssl(ssl) {}
+	SecureSocket(const int sockfd, const SSL* ssl) : Socket(sockfd), ssl((SSL*)ssl) {}
 	~SecureSocket();
 	int send(const char* msg);
 	const char* recv();
+	SecureSocket* accept();
 private:
 	static SSL_CTX* ctx;
 	static bool openssl_lib_loaded;
 	SSL* ssl;
+	int init_ssl_ctx(const char* cert_fn, const char* key_fn);
 };
 #endif
 
