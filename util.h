@@ -5,6 +5,7 @@ using namespace std;
 #ifndef __SOCKET__
 #define __SOCKET__
 #define MAX_BUF 1024
+#define FAIL -1
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -55,8 +56,9 @@ public:
 	const char* recv();
 	SecureSocket* accept();
 private:
-	static SSL_CTX* ctx;
 	static bool openssl_lib_loaded;
+	static SSL_CTX* ctx_client;
+	static SSL_CTX* ctx_server;
 	SSL* ssl;
 	int init_ssl_ctx(const char* cert_fn, const char* key_fn);
 };

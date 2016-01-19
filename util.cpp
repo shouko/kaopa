@@ -129,13 +129,14 @@ const char* Socket::getremoteip(){
   return inet_ntoa(addr.sin_addr);
 }
 
-bool SecureSocket::openssl_lib_loaded = false;
-SSL_CTX* SecureSocket::ctx = NULL;
+bool SecureSocket::ssl_lib_loaded = false;
+bool SecureSocket::ssl_certs_loaded = false;
+SSL_CTX* SecureSocket::ctx_client = NULL;
+SSL_CTX* SecureSocket::ctx_server = NULL;
 
 SecureSocket::SecureSocket(){
 	if(!openssl_lib_loaded){
-		init_ssl_ctx("cert.crt", "cert.key");
-		openssl_lib_loaded = true;
+		init_ssl_ctx();
 	}
 }
 
@@ -144,16 +145,40 @@ SecureSocket::~SecureSocket(){
 	Socket::~Socket();
 }
 
-int SecureSocket::init_ssl_ctx(const char* cert_fn, const char* key_fn){
+SecureSocket::SecureSocket(int sockfd){
+
+}
+
+SecureSocket::SecureSocket(const char* hostname, const char* port){
+	if(!openssl_lib_loaded){
+		init_ssl_ctx();
+	}
+	this->connect(hostname, port);
+}
+
+int SecureSocket::connect(const char* hostname, const char* port){
+	Socket::connect(hostname, port);
+	ssl = SSL_new(ctx_client);      // create new SSL connection state
+	SSL_set_fd(ssl, sockfd);    // attach the socket descriptor
+	if(SSL_connect(ssl) == FAIL)   // perform the connection
+		ERR_print_errors_fp(stderr);
+}
+
+int SecureSocket::init_ssl_lib(){
 	SSL_library_init();
-	const SSL_METHOD* method = SSLv3_server_method();
 	OpenSSL_add_all_algorithms();
 	SSL_load_error_strings();
-	ctx = SSL_CTX_new(method);
-	if(ctx == NULL){
+	ctx_client = SSL_CTX_new(TLS_client_method());
+	ctx_server = SSL_CTX_new(TLS_server_method());
+	if(ctx_client == NULL || ctx_server == NULL){
 		ERR_print_errors_fp(stderr);
 		abort();
 	}
+	openssl_lib_loaded = true;
+	return 0;
+}
+
+int SecureSocket::init_ssl_certs(const char* cert_fn, const char* key_fn){
 	//set local certificate
 	if(SSL_CTX_use_certificate_file(ctx, cert_fn, SSL_FILETYPE_PEM) <= 0){
 		ERR_print_errors_fp(stderr);
@@ -169,7 +194,13 @@ int SecureSocket::init_ssl_ctx(const char* cert_fn, const char* key_fn){
 		fprintf(stderr, "Private key does not match the public certificate\n");
 		abort();
 	}
-	return 0;
+}
+
+SecureSocket::listen(const unsigned short port){
+	if(!ssl_certs_loaded){
+		init_ssl_certs("mycert.pem", "mykey.pem");
+	}
+	Socket::listen(port);
 }
 
 SecureSocket* SecureSocket::accept(){
@@ -182,6 +213,7 @@ SecureSocket* SecureSocket::accept(){
 			throw new SocketException();
 		case 1:
 			return new SecureSocket(client_sockfd, ssl);
+		case FAIL:
 		default:
 			ERR_print_errors_fp(stderr);
 			throw new SocketException();
