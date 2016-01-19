@@ -142,7 +142,6 @@ SecureSocket::SecureSocket(){
 
 SecureSocket::~SecureSocket(){
 	SSL_free(ssl);
-	Socket::~Socket();
 }
 
 SecureSocket::SecureSocket(int sockfd){
@@ -196,11 +195,11 @@ int SecureSocket::init_ssl_certs(const char* cert_fn, const char* key_fn){
 	}
 }
 
-SecureSocket::listen(const unsigned short port){
+int SecureSocket::listen(const unsigned short port){
 	if(!ssl_certs_loaded){
 		init_ssl_certs("mycert.pem", "mykey.pem");
 	}
-	Socket::listen(port);
+	return Socket::listen(port);
 }
 
 SecureSocket* SecureSocket::accept(){

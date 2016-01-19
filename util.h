@@ -49,17 +49,21 @@ friend class SecureSocket;
 class SecureSocket : public Socket{
 public:
 	SecureSocket();
+	SecureSocket(const unsigned short port);
 	SecureSocket(const char* hostname, const char* port);
 	SecureSocket(const int sockfd, const SSL* ssl) : Socket(sockfd), ssl((SSL*)ssl) {}
 	~SecureSocket();
 	int send(const char* msg);
 	const char* recv();
 	SecureSocket* accept();
+	int listen(const unsigned short port);
 private:
 	static bool openssl_lib_loaded;
+	static bool openssl_certs_loaded;
 	static SSL_CTX* ctx_client;
 	static SSL_CTX* ctx_server;
 	SSL* ssl;
+	int init_ssl_lib();
 	int init_ssl_ctx(const char* cert_fn, const char* key_fn);
 };
 #endif
