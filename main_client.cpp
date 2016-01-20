@@ -186,7 +186,7 @@ void print_statusbar(const int online_users, const char* username){
 	mvprintw(23, 0, time_buffer, weekday_str[weekday_index]);
 	attroff(COLOR_PAIR(4));
 	attron(COLOR_PAIR(6));
-	printw("               ");
+	printw("                 ");
 	attroff(COLOR_PAIR(6));
 	attron(COLOR_PAIR(3));
 	printw(" 線上");
