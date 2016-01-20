@@ -138,6 +138,9 @@ int connection_accept(SecureSocket* s){
 }
 
 int main(int argc, char* argv[]){
+	cout << "Importing user data..." << endl;
+	import_users("data_server.txt");
+	cout << "Imported user data." << endl;
 	SecureSocket* s = new SecureSocket();
 	s->listen(8889);
 	int local_port = s->getlocalport();
@@ -145,11 +148,7 @@ int main(int argc, char* argv[]){
 	cout << "Listening on local port " << local_port << endl;
 	char x;
 	while(cin >> x){
-		if(x == 'i'){
-			cout << "Importing user data..." << endl;
-			import_users("data_server.txt");
-			cout << "Imported user data." << endl;
-		}else if(x == 'q'){
+		if(x == 'q'){
 			cout << "Server shutting down..." << endl;
 			cout << "Exporting user data..." << endl;
 			export_users("data_server.txt");
