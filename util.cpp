@@ -179,7 +179,7 @@ int SecureSocket::init_ssl_lib(){
 }
 
 int SecureSocket::init_ssl_certs(){
-	return init_ssl_certs("mycert.pem", "mykey.pem");
+	return init_ssl_certs("server.crt.pem", "server.key.pem");
 }
 
 int SecureSocket::init_ssl_certs(const char* cert_fn, const char* key_fn){
@@ -208,6 +208,10 @@ int SecureSocket::listen(const unsigned short port){
 	return Socket::listen(port);
 }
 
+int SecureSocket::listen(){
+	return this->listen(((const unsigned short)0));
+}
+
 SecureSocket* SecureSocket::accept(){
 	Socket* client_socket = Socket::accept();
 	int client_sockfd = client_socket->sockfd;
@@ -232,6 +236,10 @@ const char* SecureSocket::recv(){
 		return "";
 		ERR_print_errors_fp(stderr);
 	}
+}
+
+int SecureSocket::send(const string msg){
+	return this->send(msg.c_str());
 }
 
 int SecureSocket::send(const char* msg){

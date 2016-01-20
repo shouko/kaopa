@@ -53,7 +53,7 @@ int export_users(string fn){
 	}
 }
 
-int send_list(User* current_user, Socket* c){
+int send_list(User* current_user, SecureSocket* c){
 	string uol_str = "";
 	int uol = 0;
 	for(map<string, User*>::iterator it = users_online.begin(); it != users_online.end(); it++){
@@ -64,7 +64,7 @@ int send_list(User* current_user, Socket* c){
 	c->send(to_string(current_user->balance)+ "\n" + to_string(uol) + "\n" + uol_str);
 }
 
-int connection_process(Socket* c){
+int connection_process(SecureSocket* c){
 	User* current_user = 0;
 	try{
 		c->send("Hello!");
@@ -131,15 +131,15 @@ int connection_process(Socket* c){
 	return 0;
 }
 
-int connection_accept(Socket* s){
+int connection_accept(SecureSocket* s){
 	while(1){
 		thread (connection_process, s->accept()).detach();
 	}
 }
 
 int main(int argc, char* argv[]){
-	Socket* s = new Socket();
-	s->listen("8889");
+	SecureSocket* s = new SecureSocket();
+	s->listen(8889);
 	int local_port = s->getlocalport();
 	thread (connection_accept, s).detach();
 	cout << "Listening on local port " << local_port << endl;

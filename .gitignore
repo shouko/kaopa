@@ -1,3 +1,5 @@
 bin/*
 tmp/*
 data_server.txt
+*.pem
+.DS_Store

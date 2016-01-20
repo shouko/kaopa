@@ -28,7 +28,7 @@ SafeQueue<Payment> paymentQueue;
 
 class Client{
 private:
-	Socket* s;
+	SecureSocket* s;
 	string remote_host;
 	string username;
 	int balance;
@@ -52,7 +52,7 @@ private:
 
 public:
 	Client(string remote_host, const char* port) : remote_host(remote_host), username(""), balance(UNSPEC_BALANCE), local_port(0){
-		s = new Socket(this->remote_host.c_str(), port);
+		s = new SecureSocket(this->remote_host.c_str(), port);
 		s->recv();
 	}
 	~Client(){
@@ -206,9 +206,9 @@ void print_statusbar(const int online_users, const char* username){
 	attroff(COLOR_PAIR(6));
 }
 
-void payment_accept(Socket* s){
+void payment_accept(SecureSocket* s){
 	while(1){
-		Socket* c = s->accept();
+		SecureSocket* c = s->accept();
 		stringstream ps(c->recv());
 		Payment payment_data;
 		getline(ps, payment_data.user_from, '#');
@@ -295,7 +295,7 @@ int menu_command(char menu[][2][16], int items, int initial = 0){
 
 int main(int argc, char* argv[]){
 
-	Socket* p = new Socket();
+	SecureSocket* p = new SecureSocket();
 	p->listen();
 	int local_port = p->getlocalport();
 	thread (payment_accept, p).detach();

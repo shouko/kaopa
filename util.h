@@ -53,9 +53,11 @@ public:
 	SecureSocket(const char* hostname, const char* port);
 	SecureSocket(const int sockfd, const SSL* ssl) : Socket(sockfd), ssl((SSL*)ssl) {}
 	~SecureSocket();
+	int send(const string msg);
 	int send(const char* msg);
 	const char* recv();
 	SecureSocket* accept();
+	int listen();
 	int listen(const unsigned short port);
 	int connect(const char* hostname, const char* port);
 private:
