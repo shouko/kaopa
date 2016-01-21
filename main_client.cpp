@@ -136,6 +136,8 @@ void tui_init(){
 	init_pair(5, COLOR_RED, COLOR_WHITE); // reverse important
 	init_pair(6, COLOR_YELLOW, COLOR_MAGENTA); // weather
 	init_pair(7, COLOR_CYAN, COLOR_BLACK); // menu
+	init_pair(8, COLOR_GREEN, COLOR_GREEN); // success trans
+	init_pair(9, COLOR_RED, COLOR_RED); // fail trans
 }
 
 void get_weather(char* weather){
@@ -263,7 +265,7 @@ void payment_ack(Client* c){
 		trans.user_from = payment_data.user_from;
 		trans.amount = payment_data.amount;
 		trans.success = result[0] == 1;
-		transactionHisory.push_back(trans);
+		transactionHistory.push_back(trans);
 	}
 }
 
@@ -323,6 +325,48 @@ void show_info(const string* info){
 	mvwprintw(info_window, 10, 18, "[ 任意鍵關閉 ]");
 	mvwprintw(info_window, 1, 0, "加密方法：%s", info[0].c_str());
 	mvwprintw(info_window, 2, 0, "憑證資訊：%s", info[1].c_str());
+	wrefresh(info_window);
+	getch();
+	wattroff(info_window, COLOR_PAIR(3));
+	delwin(info_window);
+	curs_set(1);
+	touchwin(stdscr);
+}
+
+void show_history(){
+	WINDOW* info_window = newwin(15, 50, 5, 15);
+	draw_borders(info_window);
+	mvwprintw(info_window, 0, 19, "[ 交易紀錄 ]");
+	curs_set(0);
+	wattron(info_window, COLOR_PAIR(3));
+	for(int i = 0; i < 13; i++){
+		mvwprintw(info_window, 1 + i, 0, EMPTY_LINE_50);
+	}
+	mvwprintw(info_window, 1, 1, "#");
+	mvwprintw(info_window, 1, 4, "付款方");
+	mvwprintw(info_window, 1, 18, "收款方");
+	mvwprintw(info_window, 1, 32, "金額");
+	mvwprintw(info_window, 1, 40, "狀態");
+	int i = 2;
+	for(vector<Transaction>::iterator it = transactionHistory.begin(); it != transactionHistory.end(); it++){
+		mvwprintw(info_window, i, 1, "%d", i - 1);
+		mvwprintw(info_window, i, 4, it->user_from.c_str());
+		mvwprintw(info_window, i, 18, it->user_to.c_str());
+		mvwprintw(info_window, i, 32, it->user_to.c_str());
+		wattroff(info_window, COLOR_PAIR(3));
+		if(it->success){
+			wattron(info_window, COLOR_PAIR(8));
+			mvwprintw(info_window, i, 33, "[ 成功 ]");
+			wattroff(info_window, COLOR_PAIR(8));
+		}else{
+			wattron(info_window, COLOR_PAIR(9));
+			mvwprintw(info_window, i, 33, "[ 失敗 ]");
+			wattroff(info_window, COLOR_PAIR(9));
+		}
+		wattron(info_window, COLOR_PAIR(3));
+		i++;
+	}
+	mvwprintw(info_window, 13, 18, "[ 任意鍵關閉 ]");
 	wrefresh(info_window);
 	getch();
 	wattroff(info_window, COLOR_PAIR(3));
@@ -479,6 +523,9 @@ int main(int argc, char* argv[]){
 		switch(cmd){
 			default:
 			case 0:
+				break;
+			case 2:
+				show_history();
 				break;
 			case 3:
 				client.fetch_list();
