@@ -60,11 +60,17 @@ public:
 	int listen();
 	int listen(const unsigned short port);
 	int connect(const char* hostname, const char* port);
+	const string get_cipher_name();
+	const string get_cert_subject();
+	const string get_cert_issuer();
 private:
 	static bool ssl_lib_loaded;
 	static bool ssl_certs_loaded;
 	static SSL_CTX* ctx_client;
 	static SSL_CTX* ctx_server;
+	string cipher_name;
+	string cert_subject;
+	string cert_issuer;
 	SSL* ssl;
 	int init_ssl_lib();
 	int init_ssl_certs();

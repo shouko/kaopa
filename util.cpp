@@ -161,6 +161,14 @@ int SecureSocket::connect(const char* hostname, const char* port){
 	SSL_set_fd(ssl, sockfd);    // attach the socket descriptor
 	if(SSL_connect(ssl) == FAIL)   // perform the connection
 		ERR_print_errors_fp(stderr);
+	cipher_name = SSL_get_cipher(ssl);
+	X509 *cert = SSL_get_peer_certificate(ssl);
+	if(cert != NULL)
+	{
+		cert_subject = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
+		cert_issuer = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
+		X509_free(cert);
+	}
 	return 0;
 }
 
@@ -244,4 +252,16 @@ int SecureSocket::send(const string msg){
 
 int SecureSocket::send(const char* msg){
 	return SSL_write(ssl, msg, strlen(msg));
+}
+
+const string SecureSocket::get_cipher_name(){
+	return cipher_name;
+}
+
+const string SecureSocket::get_cert_subject(){
+	return cert_subject;
+}
+
+const string SecureSocket::get_cert_issuer(){
+	return cert_issuer;
 }

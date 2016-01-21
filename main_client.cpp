@@ -10,6 +10,7 @@
 #include "ascii_art.h"
 #define UNSPEC_BALANCE -100000
 #define EMPTY_LINE "                                                                                "
+#define EMPTY_LINE_50 "                                                  "
 using namespace std;
 
 struct User{
@@ -107,6 +108,14 @@ public:
 	}
 	void fetch_list(){
 		parse_list(exec("List\n"));
+	}
+	const string* get_info(){
+		const string info[3] = {
+			s->get_cipher_name(),
+			s->get_cert_subject(),
+			s->get_cert_issuer()
+		};
+		return info;
 	}
 };
 
@@ -244,6 +253,45 @@ bool ask_leave(){
 	}
 }
 
+void draw_borders(WINDOW *screen) {
+  int x, y, i;
+  getmaxyx(screen, y, x);
+  // 4 corners
+  mvwprintw(screen, 0, 0, "+");
+  mvwprintw(screen, y - 1, 0, "+");
+  mvwprintw(screen, 0, x - 1, "+");
+  mvwprintw(screen, y - 1, x - 1, "+");
+  // sides
+  for (i = 1; i < (y - 1); i++) {
+    mvwprintw(screen, i, 0, "|");
+    mvwprintw(screen, i, x - 1, "|");
+  }
+  // top and bottom
+  for (i = 1; i < (x - 1); i++) {
+    mvwprintw(screen, 0, i, "-");
+    mvwprintw(screen, y - 1, i, "-");
+  }
+}
+
+int show_info(const string* info){
+	WINDOW* info_window = newwin(12, 50, 8, 15);
+	draw_borders(info_window);
+	curs_set(0);
+	wattron(info_window, COLOR_PAIR(3));
+	for(int i = 0; i < 10; i++){
+		mvwprintw(info_window, 1 + i, 0, EMPTY_LINE_50);
+	}
+	mvwprintw(info_window, 10, 18, "[ 任意鍵關閉 ]");
+	mvwprintw(info_window, 1, 0, "加密方法：%s", info[0].c_str());
+	mvwprintw(info_window, 2, 0, "憑證資訊：%s", info[1].c_str());
+	wrefresh(info_window);
+	getch();
+	wattroff(info_window, COLOR_PAIR(3));
+	delwin(info_window);
+	curs_set(1);
+	touchwin(stdscr);
+}
+
 int menu_command(char menu[][2][16], int items, int initial = 0){
 	noecho();
 	int jump_table[26] = {0};
@@ -350,18 +398,19 @@ int main(int argc, char* argv[]){
 //	mvprintw(9, 5, "\033[1;33m草蜢\033[m\n");
 	print_statusbar(client.get_onlineusers(), username);
 
-	char main_menu[5][2][16] = {
+	char main_menu[6][2][16] = {
 		{"Announce", "系統公告"},
 		{"Pay", "發起付款"},
 		{"History", "交易紀錄"},
 		{"List", "用戶列表"},
+		{"Info", "系統資訊"},
 		{"Goodbye", "離開"}
 	};
 
 	int cmd = 0;
 	bool run = 1;
 	while(run){
-		cmd = menu_command(main_menu, 5, cmd);
+		cmd = menu_command(main_menu, 6, cmd);
 		switch(cmd){
 			default:
 			case 0:
@@ -371,6 +420,9 @@ int main(int argc, char* argv[]){
 				print_statusbar(client.get_onlineusers(), username);
 				break;
 			case 4:
+				show_info(client.get_info());
+				break;
+			case 5:
 				if(ask_leave()){
 					client.bye();
 					run = 0;
