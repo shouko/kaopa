@@ -120,3 +120,17 @@ private:
 #define PAYMENT_AMOUNT 1
 #define PAYMENT_TO 2
 #endif
+
+#ifndef __TRANSACTION__
+#define __TRANSACTION__
+
+class Transaction{
+public:
+	Transaction(string from_str, string to_str, string amount_str) : from_str(from_str), to_str(to_str), amount_str(amount_str), success(0) {}
+	string from_str;
+	string to_str;
+	string amount_str;
+	bool success;
+};
+
+#endif
