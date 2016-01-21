@@ -182,7 +182,7 @@ void print_header(const char* title){
 	attroff(COLOR_PAIR(2));
 }
 
-char* weekday_str[7] = {"日", "一", "二", "三", "四", "五", "六"};
+char const* weekday_str[7] = {"日", "一", "二", "三", "四", "五", "六"};
 
 void print_statusbar(const int online_users, const char* username, const int balance){
 	char* weather = new char[20];
@@ -448,6 +448,7 @@ int menu_command(char menu[][2][16], int items, int initial = 0){
 		}
 		curpos %= items;
 	}
+	return 0;
 }
 
 int main(int argc, char* argv[]){
