@@ -160,6 +160,26 @@ void tui_init(){
 	init_pair(9, COLOR_RED, COLOR_RED); // fail trans
 }
 
+void draw_borders(WINDOW *screen) {
+  int x, y, i;
+  getmaxyx(screen, y, x);
+  // 4 corners
+  mvwprintw(screen, 0, 0, "+");
+  mvwprintw(screen, y - 1, 0, "+");
+  mvwprintw(screen, 0, x - 1, "+");
+  mvwprintw(screen, y - 1, x - 1, "+");
+  // sides
+  for (i = 1; i < (y - 1); i++) {
+    mvwprintw(screen, i, 0, "|");
+    mvwprintw(screen, i, x - 1, "|");
+  }
+  // top and bottom
+  for (i = 1; i < (x - 1); i++) {
+    mvwprintw(screen, 0, i, "-");
+    mvwprintw(screen, y - 1, i, "-");
+  }
+}
+
 void get_weather(char* weather){
 	Socket s("w.ntu.im", "80");
 	s.send("GET /~b102020/kaopa.php?f=weather HTTP/1.0\n\n");
@@ -313,31 +333,10 @@ bool ask_leave(){
 	}
 }
 
-void draw_borders(WINDOW *screen) {
-  int x, y, i;
-  getmaxyx(screen, y, x);
-  // 4 corners
-  mvwprintw(screen, 0, 0, "+");
-  mvwprintw(screen, y - 1, 0, "+");
-  mvwprintw(screen, 0, x - 1, "+");
-  mvwprintw(screen, y - 1, x - 1, "+");
-  // sides
-  for (i = 1; i < (y - 1); i++) {
-    mvwprintw(screen, i, 0, "|");
-    mvwprintw(screen, i, x - 1, "|");
-  }
-  // top and bottom
-  for (i = 1; i < (x - 1); i++) {
-    mvwprintw(screen, 0, i, "-");
-    mvwprintw(screen, y - 1, i, "-");
-  }
-}
-
 void init_payment(Client *c){
 	WINDOW* info_window = newwin(12, 50, 8, 15);
 	draw_borders(info_window);
 	mvwprintw(info_window, 0, 19, "[ 發起付款 ]");
-	curs_set(0);
 	wattron(info_window, COLOR_PAIR(3));
 	for(int i = 0; i < 10; i++){
 		mvwprintw(info_window, 1 + i, 0, EMPTY_LINE_50);
@@ -349,15 +348,39 @@ void init_payment(Client *c){
 	wattron(info_window, COLOR_PAIR(4));
 	mvwprintw(info_window, 4, 14, "               ");
 	mvwprintw(info_window, 6, 14, "               ");
-	wmove(info_window, 4, 14);
 	wrefresh(info_window);
-	echo();
-	getch();
+	char to_user[21];
+	int amount = 0;
+	mvwscanw(info_window, 4, 14, "%s", to_user);
+	mvwscanw(info_window, 6, 14, "%d", &amount);
 	wattroff(info_window, COLOR_PAIR(4));
 	wattron(info_window, COLOR_PAIR(3));
+	mvwprintw(info_window, 8, 4, "交易進行中...                      ");
+	wrefresh(info_window);
+	const char* msg;
+	switch(c->pay(to_user, amount)){
+		case 0:
+			msg = "交易送出！請等待目標客戶端向伺服器兌換";
+			break;
+		case -1:
+			msg = "交易失敗：目標帳號不存在，或不在線上";
+			break;
+		case -2:
+			msg = "交易失敗：餘額不足";
+			break;
+		case -3:
+			msg = "交易失敗：目標客戶端連線問題";
+			break;
+		default:
+			msg = "交易失敗！";
+			break;
+	}
+	mvwprintw(info_window, 8, 4, msg);
+	mvwprintw(info_window, 10, 18, "[ 任意鍵關閉 ]");
+	wrefresh(info_window);
+	wgetch(info_window);
 	wattroff(info_window, COLOR_PAIR(3));
 	delwin(info_window);
-	curs_set(1);
 	touchwin(stdscr);
 }
 
