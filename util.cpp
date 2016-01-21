@@ -152,7 +152,7 @@ SecureSocket::SecureSocket(const char* hostname, const char* port){
 }
 
 SecureSocket::SecureSocket(const string hostname, const string port){
-	Socket(hostname.c_str(), port.c_str());
+	SecureSocket(hostname.c_str(), port.c_str());
 }
 
 int SecureSocket::connect(const char* hostname, const char* port){

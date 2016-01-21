@@ -190,7 +190,11 @@ int connection_process(SecureSocket* c){
 
 int connection_accept(SecureSocket* s){
 	while(1){
-		thread (connection_process, s->accept()).detach();
+		try{
+			thread (connection_process, s->accept()).detach();
+		}catch(SocketException e){
+			cout << "Error: Incoming client failed to establish secure connection." << endl;
+		}
 	}
 }
 
