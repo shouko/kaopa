@@ -26,8 +26,9 @@ public:
 class Socket{
 public:
 	Socket();
-	Socket(const int sockfd);
+	Socket(const int sockfd) : sockfd(sockfd) {};
 	Socket(const char* hostname, const char* port);
+	Socket(const string hostname, const string port);
 	~Socket();
 	int connect(const char* hostname, const char* port);
 	int send(const string msg);
@@ -49,8 +50,8 @@ friend class SecureSocket;
 class SecureSocket : public Socket{
 public:
 	SecureSocket();
-	SecureSocket(int sockfd);
 	SecureSocket(const char* hostname, const char* port);
+	SecureSocket(const string hostname, const string port);
 	SecureSocket(const int sockfd, const SSL* ssl) : Socket(sockfd), ssl((SSL*)ssl) {}
 	~SecureSocket();
 	int send(const string msg);

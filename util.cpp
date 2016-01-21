@@ -4,12 +4,12 @@ Socket::Socket(){
 	sockfd = -1;
 }
 
-Socket::Socket(const int sockfd){
-	this->sockfd = sockfd;
-}
-
 Socket::Socket(const char* hostname, const char* port){
 	this->connect(hostname, port);
+}
+
+Socket::Socket(string hostname, string port){
+	Socket(hostname.c_str(), port.c_str());
 }
 
 int Socket::connect(const char* hostname, const char* port){
@@ -144,15 +144,15 @@ SecureSocket::~SecureSocket(){
 	SSL_free(ssl);
 }
 
-SecureSocket::SecureSocket(int sockfd){
-
-}
-
 SecureSocket::SecureSocket(const char* hostname, const char* port){
 	if(!ssl_lib_loaded){
 		init_ssl_lib();
 	}
 	this->connect(hostname, port);
+}
+
+SecureSocket::SecureSocket(const string hostname, const string port){
+	Socket(hostname.c_str(), port.c_str());
 }
 
 int SecureSocket::connect(const char* hostname, const char* port){

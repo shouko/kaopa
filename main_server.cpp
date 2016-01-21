@@ -57,7 +57,7 @@ int export_users(string fn){
 }
 
 void notify_sender(Transaction* trans, User* user){
-	SecureSocket s(user->ip.c_str(), user->port.c_str());
+	SecureSocket s(user->ip, user->port);
 	string msg;
 	if(trans->success){
 		msg = "100 OK#";
