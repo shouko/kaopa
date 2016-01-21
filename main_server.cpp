@@ -30,6 +30,15 @@ public:
 	}
 };
 
+class TransactionRecord{
+public:
+	TransactionRecord(string from_str, string to_str, string amount_str) : from_str(from_str), to_str(to_str), amount_str(amount_str), success(0) {}
+	string from_str;
+	string to_str;
+	string amount_str;
+	bool success;
+};
+
 map<string, User> users;
 map<string, User*> users_online;
 
@@ -54,13 +63,16 @@ int export_users(string fn){
 	}
 }
 
-void notify_sender(User* user, bool success){
-	SecureSocket Trans(user->ip.c_str(), user->port.c_str());
-	if(success){
-		Trans.send("100 OK\n");
+void notify_sender(TransactionRecord* trans, User* user){
+	SecureSocket s(user->ip.c_str(), user->port.c_str());
+	string msg;
+	if(trans->success){
+		msg = "100 OK#";
 	}else{
-		Trans.send("201 INSUFFICIENT_FUND\n");
+		msg = "201 INSUFFICIENT_FUND#";
 	}
+	msg +=  trans->to_str + " " + trans->amount_str;
+	s.send(msg);
 }
 
 int send_list(User* current_user, SecureSocket* c){
@@ -139,6 +151,7 @@ int connection_process(SecureSocket* c){
 				getline(uss, from_str, '#');
 				getline(uss, amount_str, '#');
 				getline(uss, to_str, '\n');
+				TransactionRecord trans(from_str, to_str, amount_str);
 				stringstream ass(amount_str);
 				ass >> amount;
 				map<string, User*>::iterator from_user_it = users_online.find(from_str);
@@ -150,7 +163,8 @@ int connection_process(SecureSocket* c){
 				from_user = from_user_it->second;
 				if(from_user->balance < amount){
 					// insufficient fund
-					thread (notify_sender, from_user, 0).detach();
+					trans.success = false;
+					thread (notify_sender, &trans, from_user).detach();
 					c->send("201 INSUFFICIENT_FUND\n");
 					continue;
 				}
@@ -164,7 +178,8 @@ int connection_process(SecureSocket* c){
 				}
 				from_user->adjust_balance(-1*amount);
 				to_user->adjust_balance(amount);
-				thread (notify_sender, from_user, 1).detach();
+				trans.success = true;
+				thread (notify_sender, &trans, from_user).detach();
 				c->send("100 OK\n");
 			}
 		}
