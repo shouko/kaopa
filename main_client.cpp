@@ -117,6 +117,7 @@ public:
 		};
 		return info;
 	}
+friend void show_list(Client* client);
 };
 
 void tui_init(){
@@ -273,9 +274,10 @@ void draw_borders(WINDOW *screen) {
   }
 }
 
-int show_info(const string* info){
+void show_info(const string* info){
 	WINDOW* info_window = newwin(12, 50, 8, 15);
 	draw_borders(info_window);
+	mvwprintw(info_window, 0, 19, "[ 系統資訊 ]");
 	curs_set(0);
 	wattron(info_window, COLOR_PAIR(3));
 	for(int i = 0; i < 10; i++){
@@ -284,6 +286,32 @@ int show_info(const string* info){
 	mvwprintw(info_window, 10, 18, "[ 任意鍵關閉 ]");
 	mvwprintw(info_window, 1, 0, "加密方法：%s", info[0].c_str());
 	mvwprintw(info_window, 2, 0, "憑證資訊：%s", info[1].c_str());
+	wrefresh(info_window);
+	getch();
+	wattroff(info_window, COLOR_PAIR(3));
+	delwin(info_window);
+	curs_set(1);
+	touchwin(stdscr);
+}
+
+void show_list(Client* client){
+	WINDOW* info_window = newwin(12, 50, 8, 15);
+	draw_borders(info_window);
+	mvwprintw(info_window, 0, 19, "[ 線上用戶 ]");
+	curs_set(0);
+	wattron(info_window, COLOR_PAIR(3));
+	for(int i = 0; i < 10; i++){
+		mvwprintw(info_window, 1 + i, 0, EMPTY_LINE_50);
+	}
+	mvwprintw(info_window, 1, 1, "用戶名稱");
+	mvwprintw(info_window, 1, 14, "位址");
+	int i = 2;
+	for(map<string, User>::iterator it = client->users.begin(); it != client->users.end(); it++){
+		mvwprintw(info_window, i, 1, "%s", it->second.username.c_str());
+		mvwprintw(info_window, i, 14, "%s:%s", it->second.ip.c_str(), it->second.port.c_str());
+		i++;
+	}
+	mvwprintw(info_window, 10, 18, "[ 任意鍵關閉 ]");
 	wrefresh(info_window);
 	getch();
 	wattroff(info_window, COLOR_PAIR(3));
@@ -418,6 +446,7 @@ int main(int argc, char* argv[]){
 			case 3:
 				client.fetch_list();
 				print_statusbar(client.get_onlineusers(), username);
+				show_list(&client);
 				break;
 			case 4:
 				show_info(client.get_info());
