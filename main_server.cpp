@@ -45,6 +45,7 @@ int import_users(string fn){
 		User user(username, balance);
 		users.insert(make_pair(username, user));
 	}
+	return 0;
 }
 
 int export_users(string fn){
@@ -52,6 +53,7 @@ int export_users(string fn){
 	for(map<string, User>::iterator it = users.begin(); it != users.end(); it++){
 		ofs << it->second.username << '#' << it->second.balance << '\n';
 	}
+	return 0;
 }
 
 void notify_sender(Transaction* trans, User* user){
@@ -74,7 +76,7 @@ int send_list(User* current_user, SecureSocket* c){
 		uol_str += user->username + "#" + user->ip + "#" + user->port + "\n";
 		uol++;
 	}
-	c->send(to_string(current_user->balance)+ "\n" + to_string(uol) + "\n" + uol_str);
+	return c->send(to_string(current_user->balance)+ "\n" + to_string(uol) + "\n" + uol_str);
 }
 
 int connection_process(SecureSocket* c){
