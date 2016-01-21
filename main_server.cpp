@@ -4,6 +4,7 @@
 #include <map>
 #include <sstream>
 #include <fstream>
+#include <assert.h>
 #include "util.h"
 using namespace std;
 
@@ -50,6 +51,15 @@ int export_users(string fn){
 	ofstream ofs(fn);
 	for(map<string, User>::iterator it = users.begin(); it != users.end(); it++){
 		ofs << it->second.username << '#' << it->second.balance << '\n';
+	}
+}
+
+void notify_sender(User* user, bool success){
+	SecureSocket Trans(user->ip.c_str(), user->port.c_str());
+	if(success){
+		Trans.send("100 OK\n");
+	}else{
+		Trans.send("201 INSUFFICIENT_FUND\n");
 	}
 }
 
@@ -123,7 +133,6 @@ int connection_process(SecureSocket* c){
 				string amount_str;
 				string to_str;
 				User* from_user;
-				int amount;
 				User* to_user;
 				int amount = 0;
 				stringstream uss(cmd);
@@ -132,24 +141,30 @@ int connection_process(SecureSocket* c){
 				getline(uss, to_str, '\n');
 				stringstream ass(amount_str);
 				ass >> amount;
-				from_user = users.find(from_str);
-				if(from_user == users.end()){
-					continue; // inexist sender
+				map<string, User*>::iterator from_user_it = users_online.find(from_str);
+				if(from_user_it == users_online.end()){
+					// inexist sender or not online
+					c->send("200 SENDER_NOT_AVAIL\n");
+					continue;
 				}
+				from_user = from_user_it->second;
 				if(from_user->balance < amount){
 					// insufficient fund
+					thread (notify_sender, from_user, 0).detach();
+					c->send("201 INSUFFICIENT_FUND\n");
+					continue;
 				}
-				to_user = users.find(to_str);
-				if(to_user == users.end()){
+				map<string, User*>::iterator to_user_it = users_online.find(to_str);
+				if(to_user_it == users_online.end()){
 					continue; // inexist receiver
 				}
+				to_user = to_user_it->second;
 				if(to_user != current_user){
 					continue; // receiver does not match current user
 				}
-				from_user.adjust_balance(-1*amount);
-				to_user.adjust_balance(amount);
-				SecureSocket Trans(from_user.ip, from_user.port);
-				Trans.send("100 OK\n");
+				from_user->adjust_balance(-1*amount);
+				to_user->adjust_balance(amount);
+				thread (notify_sender, from_user, 1).detach();
 				c->send("100 OK\n");
 			}
 		}
