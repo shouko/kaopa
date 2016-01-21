@@ -64,7 +64,7 @@ void notify_sender(Transaction* trans, User* user){
 	}else{
 		msg = "201 INSUFFICIENT_FUND#";
 	}
-	msg +=  trans->to_str + " " + trans->amount_str;
+	msg +=  trans->user_to + " " + trans->amount;
 	s.send(msg);
 }
 

@@ -126,10 +126,11 @@ private:
 
 class Transaction{
 public:
-	Transaction(string from_str, string to_str, string amount_str) : from_str(from_str), to_str(to_str), amount_str(amount_str), success(0) {}
-	string from_str;
-	string to_str;
-	string amount_str;
+	Transaction() {}
+	Transaction(string user_from, string user_to, string amount) : user_from(user_from), user_to(user_to), amount(amount), success(0) {}
+	string user_from;
+	string user_to;
+	string amount;
 	bool success;
 };
 
