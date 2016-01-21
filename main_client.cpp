@@ -53,7 +53,7 @@ private:
 	}
 
 public:
-	Client(string remote_host, const char* port) : remote_host(remote_host), username(""), balance(UNSPEC_BALANCE), local_port(0){
+	Client(const char* remote_host, const char* port) : remote_host(remote_host), username(""), balance(UNSPEC_BALANCE), local_port(0){
 		s = new SecureSocket(this->remote_host.c_str(), port);
 		s->recv();
 	}
@@ -120,6 +120,26 @@ public:
 	}
 	const int get_balance(){
 		return balance;
+	}
+	int pay(string to_user, int amount){
+		map<string, User>::iterator it = users.find(to_user);
+		if(it == users.end()){
+			return -1;
+		}
+		if(amount > get_balance()){
+			return -2;
+		}
+		try{
+			SecureSocket s_to(it->second.ip, it->second.port);
+			s_to.send(username + "#" + to_string(amount) + "#" + to_user + "\n");
+			const char* result = s_to.recv();
+			if(result[0] != '1'){
+				return -3;
+			}
+		}catch(SocketException e){
+			return -1;
+		}
+		return 0;
 	}
 friend void show_list(Client* client);
 };
@@ -313,6 +333,34 @@ void draw_borders(WINDOW *screen) {
   }
 }
 
+void init_payment(Client *c){
+	WINDOW* info_window = newwin(12, 50, 8, 15);
+	draw_borders(info_window);
+	mvwprintw(info_window, 0, 19, "[ 發起付款 ]");
+	curs_set(0);
+	wattron(info_window, COLOR_PAIR(3));
+	for(int i = 0; i < 10; i++){
+		mvwprintw(info_window, 1 + i, 0, EMPTY_LINE_50);
+	}
+//	mvwprintw(info_window, 10, 18, "[ 任意鍵關閉 ]");
+	mvwprintw(info_window, 4, 4, "收款帳號：");
+	mvwprintw(info_window, 6, 4, "交易金額：");
+	wattroff(info_window, COLOR_PAIR(3));
+	wattron(info_window, COLOR_PAIR(4));
+	mvwprintw(info_window, 4, 14, "               ");
+	mvwprintw(info_window, 6, 14, "               ");
+	wmove(info_window, 4, 14);
+	wrefresh(info_window);
+	echo();
+	getch();
+	wattroff(info_window, COLOR_PAIR(4));
+	wattron(info_window, COLOR_PAIR(3));
+	wattroff(info_window, COLOR_PAIR(3));
+	delwin(info_window);
+	curs_set(1);
+	touchwin(stdscr);
+}
+
 void show_info(const string* info){
 	WINDOW* info_window = newwin(12, 50, 8, 15);
 	draw_borders(info_window);
@@ -441,7 +489,6 @@ int menu_command(char menu[][2][16], int items, int initial = 0){
 			case '\r':
 			case '\n':
 			case KEY_ENTER:
-				printw(" ");
 				selecting = 0;
 				echo();
 				return curpos;
@@ -524,6 +571,9 @@ int main(int argc, char* argv[]){
 		switch(cmd){
 			default:
 			case 0:
+				break;
+			case 1:
+				init_payment(&client);
 				break;
 			case 2:
 				show_history();
