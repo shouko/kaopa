@@ -117,6 +117,40 @@ int connection_process(SecureSocket* c){
 			}else if(cmd == "Exit"){
 				c->send("Bye");
 				break;
+			}else{
+				// user received payment
+				string from_str;
+				string amount_str;
+				string to_str;
+				User* from_user;
+				int amount;
+				User* to_user;
+				int amount = 0;
+				stringstream uss(cmd);
+				getline(uss, from_str, '#');
+				getline(uss, amount_str, '#');
+				getline(uss, to_str, '\n');
+				stringstream ass(amount_str);
+				ass >> amount;
+				from_user = users.find(from_str);
+				if(from_user == users.end()){
+					continue; // inexist sender
+				}
+				if(from_user->balance < amount){
+					// insufficient fund
+				}
+				to_user = users.find(to_str);
+				if(to_user == users.end()){
+					continue; // inexist receiver
+				}
+				if(to_user != current_user){
+					continue; // receiver does not match current user
+				}
+				from_user.adjust_balance(-1*amount);
+				to_user.adjust_balance(amount);
+				SecureSocket Trans(from_user.ip, from_user.port);
+				Trans.send("100 OK\n");
+				c->send("100 OK\n");
 			}
 		}
 	}catch(SocketException e){
