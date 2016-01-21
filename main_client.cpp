@@ -26,6 +26,7 @@ struct Payment{
 };
 
 SafeQueue<Payment> paymentQueue;
+vector<Transaction> transactionHistory;
 
 class Client{
 private:
@@ -234,11 +235,35 @@ void payment_accept(SecureSocket* s){
 		stringstream ps(c->recv());
 		Payment payment_data;
 		getline(ps, payment_data.user_from, '#');
-		getline(ps, payment_data.amount, '#');
-		getline(ps, payment_data.user_to, '\n');
-		paymentQueue.push(payment_data);
-		c->send("100 OK");
+		if(payment_data.user_from[0] != '1' && payment_data.user_from[0] != '2'){
+			// payment from peer
+			getline(ps, payment_data.amount, '#');
+			getline(ps, payment_data.user_to, '\n');
+			paymentQueue.push(payment_data);
+			c->send("100 OK");
+		}else{
+			// ACK from server about my outgoing payments
+			Transaction trans;
+			trans.user_from = "我";
+			ps >> trans.user_to >> trans.amount;
+			trans.success = payment_data.user_from[0] == '1';
+			transactionHistory.push_back(trans);
+		}
 		delete c;
+	}
+}
+
+void payment_ack(Client* c){
+	while(1){
+		Payment payment_data = paymentQueue.pop();
+		// redeem the incoming payment
+		const char* result = c->exec(payment_data.user_from + "#" + payment_data.amount + "#" + payment_data.user_to + "\n");
+		Transaction trans;
+		trans.user_to = "我";
+		trans.user_from = payment_data.user_from;
+		trans.amount = payment_data.amount;
+		trans.success = result[0] == 1;
+		transactionHisory.push_back(trans);
 	}
 }
 
