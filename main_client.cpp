@@ -117,6 +117,9 @@ public:
 		};
 		return info;
 	}
+	const int get_balance(){
+		return balance;
+	}
 friend void show_list(Client* client);
 };
 
@@ -178,7 +181,7 @@ void print_header(const char* title){
 
 char* weekday_str[7] = {"日", "一", "二", "三", "四", "五", "六"};
 
-void print_statusbar(const int online_users, const char* username){
+void print_statusbar(const int online_users, const char* username, const int balance){
 	char* weather = new char[20];
 	thread weather_thread(get_weather, weather);
 	attron(COLOR_PAIR(3));
@@ -210,6 +213,15 @@ void print_statusbar(const int online_users, const char* username){
 	attron(COLOR_PAIR(5));
 	printw("%s", username);
 	attroff(COLOR_PAIR(5));
+	attron(COLOR_PAIR(3));
+	printw(", 帳戶餘額");
+	attroff(COLOR_PAIR(3));
+	attron(COLOR_PAIR(5));
+	printw("%d", balance);
+	attroff(COLOR_PAIR(5));
+	attron(COLOR_PAIR(3));
+	printw("元");
+	attroff(COLOR_PAIR(3));
 	weather_thread.join();
 	attron(COLOR_PAIR(6));
 	mvprintw(23, 20, " [ %s ]  ", weather);
@@ -424,7 +436,7 @@ int main(int argc, char* argv[]){
 	print_header("主功能表");
 	print_welcome();
 //	mvprintw(9, 5, "\033[1;33m草蜢\033[m\n");
-	print_statusbar(client.get_onlineusers(), username);
+	print_statusbar(client.get_onlineusers(), username, client.get_balance());
 
 	char main_menu[6][2][16] = {
 		{"Announce", "系統公告"},
@@ -445,7 +457,7 @@ int main(int argc, char* argv[]){
 				break;
 			case 3:
 				client.fetch_list();
-				print_statusbar(client.get_onlineusers(), username);
+				print_statusbar(client.get_onlineusers(), username, client.get_balance());
 				show_list(&client);
 				break;
 			case 4:
