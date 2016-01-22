@@ -8,6 +8,12 @@
 #include "util.h"
 using namespace std;
 
+void print_zz(string a){
+	for(int i = 0; i < a.size(); i++){
+		cout << "[" << (int)a[i] << "]";
+	}
+}
+
 class User{
 public:
 	string username;
@@ -57,15 +63,20 @@ int export_users(string fn){
 }
 
 void notify_sender(Transaction* trans, User* user){
-	SecureSocket s(user->ip, user->port);
-	string msg;
-	if(trans->success){
-		msg = "100 OK#";
-	}else{
-		msg = "201 INSUFFICIENT_FUND#";
+	try{
+		Socket s(user->ip, user->port);
+		string msg;
+		if(trans->success){
+			msg = "100 OK#";
+		}else{
+			msg = "201 INSUFFICIENT_FUND#";
+		}
+		msg +=  trans->user_to + " " + trans->amount;
+		s.send(msg);
+		s.recv();
+	}catch(SocketException e){
+		cout << "Error: Failed to notify sender" << endl;
 	}
-	msg +=  trans->user_to + " " + trans->amount;
-	s.send(msg);
 }
 
 int send_list(User* current_user, SecureSocket* c){
@@ -107,7 +118,7 @@ int connection_process(SecureSocket* c){
 			}else{
 				// login
 				// fetch user data from user database
-				cout << "RECEIVED: " << cmd << endl;
+				cout << "LOGIN: " << cmd << endl;
 				map<string, User>::iterator it = users.find(cmd);
 				cout << it->second.username << endl;
 				if(it != users.end()){
@@ -132,7 +143,7 @@ int connection_process(SecureSocket* c){
 			}else if(cmd == "Exit"){
 				c->send("Bye");
 				break;
-			}else{
+			}else if(cmd == "Pay"){
 				// user received payment
 				string from_str;
 				string amount_str;
@@ -140,17 +151,19 @@ int connection_process(SecureSocket* c){
 				User* from_user;
 				User* to_user;
 				int amount = 0;
-				stringstream uss(cmd);
-				getline(uss, from_str, '#');
-				getline(uss, amount_str, '#');
-				getline(uss, to_str, '\n');
+				getline(ss, from_str, '#');
+				getline(ss, amount_str, '#');
+				getline(ss, to_str, '#');
 				Transaction trans(from_str, to_str, amount_str);
 				stringstream ass(amount_str);
 				ass >> amount;
+				cout << current_user->username << "in transaction " << from_str << "#" << amount_str << "#" << to_str << endl;
 				map<string, User*>::iterator from_user_it = users_online.find(from_str);
 				if(from_user_it == users_online.end()){
 					// inexist sender or not online
+					cout << "Error: Fail to find sender " << from_str << endl;
 					c->send("200 SENDER_NOT_AVAIL\n");
+					c->recv();
 					continue;
 				}
 				from_user = from_user_it->second;
@@ -159,14 +172,21 @@ int connection_process(SecureSocket* c){
 					trans.success = false;
 					thread (notify_sender, &trans, from_user).detach();
 					c->send("201 INSUFFICIENT_FUND\n");
+					c->recv();
 					continue;
 				}
 				map<string, User*>::iterator to_user_it = users_online.find(to_str);
 				if(to_user_it == users_online.end()){
+					cout << "Error: In exist user " << to_str << endl;
+					print_zz(to_str);
+					cout << endl;
+					print_zz(current_user->username);
+					cout << endl;
 					continue; // inexist receiver
 				}
 				to_user = to_user_it->second;
 				if(to_user != current_user){
+					cout << "Error: Receiver " << to_user->username << " " << to_user << " " << current_user->username << " " << current_user << " does not match current user" << to_str << endl;
 					continue; // receiver does not match current user
 				}
 				from_user->adjust_balance(-1*amount);
