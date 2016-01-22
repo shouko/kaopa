@@ -138,6 +138,7 @@ SecureSocket::SecureSocket(){
 }
 
 SecureSocket::~SecureSocket(){
+	SSL_shutdown(ssl);
 	SSL_free(ssl);
 }
 
@@ -177,6 +178,7 @@ int SecureSocket::init_ssl_lib(){
 	OpenSSL_add_all_algorithms();
 	SSL_load_error_strings();
 	ssl_lib_loaded = true;
+	ssl_ctx_loaded = false;
 	return 0;
 }
 
@@ -221,8 +223,10 @@ int SecureSocket::init_ssl_certs(const char* cert_fn, const char* key_fn){
 
 int SecureSocket::listen(const unsigned short port){
 	if(!ssl_lib_loaded){
-		is_server = true;
-		init_ssl_certs();
+		init_ssl_lib();
+	}
+	if(!ssl_ctx_loaded){
+		init_ssl_ctx(1);
 	}
 	return Socket::listen(port);
 }
@@ -234,13 +238,13 @@ int SecureSocket::listen(){
 SecureSocket* SecureSocket::accept(){
 	Socket* client_socket = Socket::accept();
 	int client_sockfd = client_socket->sockfd;
-	SSL* ssl = SSL_new(ctx);              // get new SSL state with context
-	SSL_set_fd(ssl, client_sockfd);
-	switch(SSL_accept(ssl)){
+	SSL* client_ssl = SSL_new(ctx);              // get new SSL state with context
+	SSL_set_fd(client_ssl, client_sockfd);
+	switch(SSL_accept(client_ssl)){
 		case 0:
 			throw new SocketException();
 		case 1:
-			return new SecureSocket(client_sockfd, ssl);
+			return new SecureSocket(client_sockfd, client_ssl);
 		case FAIL:
 		default:
 			ERR_print_errors_fp(stderr);
