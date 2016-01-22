@@ -66,14 +66,15 @@ public:
 	const string get_cert_issuer();
 private:
 	static bool ssl_lib_loaded;
-	static bool ssl_certs_loaded;
-	static SSL_CTX* ctx_client;
-	static SSL_CTX* ctx_server;
+	bool ssl_ctx_loaded;
+	bool is_server;
 	string cipher_name;
 	string cert_subject;
 	string cert_issuer;
+	SSL_CTX* ctx;
 	SSL* ssl;
 	int init_ssl_lib();
+	int init_ssl_ctx(bool is_server);
 	int init_ssl_certs();
 	int init_ssl_certs(const char* cert_fn, const char* key_fn);
 };
