@@ -238,7 +238,12 @@ SecureSocket* SecureSocket::accept(){
 }
 
 const char* SecureSocket::recv(){
-	if(SSL_read(ssl, recv_buf, MAX_BUF) > 0){
+	int n = SSL_read(ssl, recv_buf, MAX_BUF);
+	if(n > 0){
+		recv_buf[n] = 0;
+#ifdef DEBUG
+		cout << "<< " << recv_buf << endl;
+#endif
 		return recv_buf;
 	}else{
 		return "";
@@ -251,6 +256,9 @@ int SecureSocket::send(const string msg){
 }
 
 int SecureSocket::send(const char* msg){
+#ifdef DEBUG
+	cout << ">> " << msg << endl;
+#endif
 	return SSL_write(ssl, msg, strlen(msg));
 }
 
