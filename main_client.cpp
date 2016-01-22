@@ -6,6 +6,7 @@
 #include <ncurses.h>
 #include <locale.h>
 #include <time.h>
+#include <unistd.h>
 #include "util.h"
 #include "ascii_art.h"
 #define UNSPEC_BALANCE -100000
@@ -133,10 +134,11 @@ public:
 		}
 		try{
 			//			SecureSocket s_to(it->second.ip, it->second.port);
-			Socket s_to(it->second.ip, it->second.port);
-			string request = "0#" + username + "#" + to_string(amount) + "#" + to_user + "\n";
-			s_to.send(request);
-			const char* result = s_to.recv();
+			Socket sto(it->second.ip.c_str(), it->second.port.c_str());
+			sleep(1200);
+			string request = "0#" + this->username + "#" + to_string(amount) + "#" + to_user + "#\n";
+			sto.send(request);
+			const char* result = sto.recv();
 			if(result[0] != '1'){
 				return -3;
 			}
@@ -430,7 +432,7 @@ void show_history(){
 		mvwprintw(info_window, i, 1, "%d", i - 1);
 		mvwprintw(info_window, i, 4, it->user_from.c_str());
 		mvwprintw(info_window, i, 18, it->user_to.c_str());
-		mvwprintw(info_window, i, 32, it->user_to.c_str());
+		mvwprintw(info_window, i, 32, it->amount.c_str());
 		wattroff(info_window, COLOR_PAIR(3));
 		if(it->success){
 			wattron(info_window, COLOR_PAIR(8));
