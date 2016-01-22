@@ -20,6 +20,8 @@ struct User{
 };
 
 struct Payment{
+public:
+	Payment(){}
 	string user_from;
 	string amount;
 	string user_to;
@@ -130,8 +132,10 @@ public:
 			return -2;
 		}
 		try{
-			SecureSocket s_to(it->second.ip, it->second.port);
-			s_to.send(username + "#" + to_string(amount) + "#" + to_user + "\n");
+			//			SecureSocket s_to(it->second.ip, it->second.port);
+			Socket s_to(it->second.ip, it->second.port);
+			string request = "0#" + username + "#" + to_string(amount) + "#" + to_user + "\n";
+			s_to.send(request);
 			const char* result = s_to.recv();
 			if(result[0] != '1'){
 				return -3;
@@ -141,8 +145,10 @@ public:
 		}
 		return 0;
 	}
-friend void show_list(Client* client);
+friend void show_list();
 };
+
+Client *c;
 
 void tui_init(){
 	setlocale(LC_ALL,"");
@@ -156,8 +162,8 @@ void tui_init(){
 	init_pair(5, COLOR_RED, COLOR_WHITE); // reverse important
 	init_pair(6, COLOR_YELLOW, COLOR_MAGENTA); // weather
 	init_pair(7, COLOR_CYAN, COLOR_BLACK); // menu
-	init_pair(8, COLOR_GREEN, COLOR_GREEN); // success trans
-	init_pair(9, COLOR_RED, COLOR_RED); // fail trans
+	init_pair(8, COLOR_WHITE, COLOR_GREEN); // success trans
+	init_pair(9, COLOR_WHITE, COLOR_RED); // fail trans
 }
 
 void draw_borders(WINDOW *screen) {
@@ -271,41 +277,42 @@ void print_statusbar(const int online_users, const char* username, const int bal
 	attroff(COLOR_PAIR(6));
 }
 
-void payment_accept(SecureSocket* s){
+void payment_ack(Payment& payment_data){
+	// redeem the incoming payment
+	string request = "Pay\n" + payment_data.user_from + "#" + payment_data.amount + "#" + payment_data.user_to + "#";
+	const char* result = c->exec(request);
+	Transaction trans;
+	trans.user_to = "我";
+	trans.user_from = payment_data.user_from;
+	trans.amount = payment_data.amount;
+	trans.success = (result[0] == '1');
+	transactionHistory.push_back(trans);
+}
+
+void payment_accept(Socket* s){
 	while(1){
-		SecureSocket* c = s->accept();
+		Socket* c = s->accept();
 		stringstream ps(c->recv());
 		Payment payment_data;
-		getline(ps, payment_data.user_from, '#');
-		if(payment_data.user_from[0] != '1' && payment_data.user_from[0] != '2'){
+		string action;
+		getline(ps, action, '#');
+		if(action[0] == '0'){
 			// payment from peer
+			getline(ps, payment_data.user_from, '#');
 			getline(ps, payment_data.amount, '#');
-			getline(ps, payment_data.user_to, '\n');
-			paymentQueue.push(payment_data);
-			c->send("100 OK");
-		}else{
+			getline(ps, payment_data.user_to, '#');
+			c->send("100 OK\n");
+			payment_ack(payment_data);
+		}else if(action[0] == '1' || action[0] == '2'){
 			// ACK from server about my outgoing payments
 			Transaction trans;
 			trans.user_from = "我";
 			ps >> trans.user_to >> trans.amount;
-			trans.success = payment_data.user_from[0] == '1';
+			trans.success = action[0] == '1';
 			transactionHistory.push_back(trans);
+			c->send("100 OK\n");
 		}
 		delete c;
-	}
-}
-
-void payment_ack(Client* c){
-	while(1){
-		Payment payment_data = paymentQueue.pop();
-		// redeem the incoming payment
-		const char* result = c->exec(payment_data.user_from + "#" + payment_data.amount + "#" + payment_data.user_to + "\n");
-		Transaction trans;
-		trans.user_to = "我";
-		trans.user_from = payment_data.user_from;
-		trans.amount = payment_data.amount;
-		trans.success = result[0] == 1;
-		transactionHistory.push_back(trans);
 	}
 }
 
@@ -333,7 +340,7 @@ bool ask_leave(){
 	}
 }
 
-void init_payment(Client *c){
+void init_payment(){
 	WINDOW* info_window = newwin(12, 50, 8, 15);
 	draw_borders(info_window);
 	mvwprintw(info_window, 0, 19, "[ 發起付款 ]");
@@ -427,11 +434,11 @@ void show_history(){
 		wattroff(info_window, COLOR_PAIR(3));
 		if(it->success){
 			wattron(info_window, COLOR_PAIR(8));
-			mvwprintw(info_window, i, 33, "[ 成功 ]");
+			mvwprintw(info_window, i, 40, "[ 成功 ]");
 			wattroff(info_window, COLOR_PAIR(8));
 		}else{
 			wattron(info_window, COLOR_PAIR(9));
-			mvwprintw(info_window, i, 33, "[ 失敗 ]");
+			mvwprintw(info_window, i, 40, "[ 失敗 ]");
 			wattroff(info_window, COLOR_PAIR(9));
 		}
 		wattron(info_window, COLOR_PAIR(3));
@@ -446,7 +453,7 @@ void show_history(){
 	touchwin(stdscr);
 }
 
-void show_list(Client* client){
+void show_list(){
 	WINDOW* info_window = newwin(12, 50, 8, 15);
 	draw_borders(info_window);
 	mvwprintw(info_window, 0, 19, "[ 線上用戶 ]");
@@ -458,7 +465,7 @@ void show_list(Client* client){
 	mvwprintw(info_window, 1, 1, "用戶名稱");
 	mvwprintw(info_window, 1, 14, "位址");
 	int i = 2;
-	for(map<string, User>::iterator it = client->users.begin(); it != client->users.end(); it++){
+	for(map<string, User>::iterator it = c->users.begin(); it != c->users.end(); it++){
 		mvwprintw(info_window, i, 1, "%s", it->second.username.c_str());
 		mvwprintw(info_window, i, 14, "%s:%s", it->second.ip.c_str(), it->second.port.c_str());
 		i++;
@@ -523,7 +530,7 @@ int menu_command(char menu[][2][16], int items, int initial = 0){
 
 int main(int argc, char* argv[]){
 
-	SecureSocket* p = new SecureSocket();
+	Socket* p = new Socket();
 	p->listen();
 	int local_port = p->getlocalport();
 	thread (payment_accept, p).detach();
@@ -571,7 +578,7 @@ int main(int argc, char* argv[]){
 			break;
 		}
 	}
-
+	c = &client;
 	erase();
 	print_header("主功能表");
 	print_welcome();
@@ -596,7 +603,7 @@ int main(int argc, char* argv[]){
 			case 0:
 				break;
 			case 1:
-				init_payment(&client);
+				init_payment();
 				break;
 			case 2:
 				show_history();
@@ -604,7 +611,7 @@ int main(int argc, char* argv[]){
 			case 3:
 				client.fetch_list();
 				print_statusbar(client.get_onlineusers(), username, client.get_balance());
-				show_list(&client);
+				show_list();
 				break;
 			case 4:
 				show_info(client.get_info());
