@@ -8,12 +8,6 @@
 #include "util.h"
 using namespace std;
 
-void print_zz(string a){
-	for(int i = 0; i < a.size(); i++){
-		cout << "[" << (int)a[i] << "]";
-	}
-}
-
 class User{
 public:
 	string username;
@@ -158,7 +152,7 @@ int connection_process(SecureSocket* c){
 				Transaction trans(from_str, to_str, amount_str);
 				stringstream ass(amount_str);
 				ass >> amount;
-				cout << current_user->username << "in transaction " << from_str << "#" << amount_str << "#" << to_str << endl;
+				cout << current_user->username << " in transaction " << from_str << "#" << amount_str << "#" << to_str << endl;
 				map<string, User*>::iterator from_user_it = users_online.find(from_str);
 				if(from_user_it == users_online.end()){
 					// inexist sender or not online
@@ -179,9 +173,7 @@ int connection_process(SecureSocket* c){
 				map<string, User*>::iterator to_user_it = users_online.find(to_str);
 				if(to_user_it == users_online.end()){
 					cout << "Error: In exist user " << to_str << endl;
-					print_zz(to_str);
 					cout << endl;
-					print_zz(current_user->username);
 					cout << endl;
 					continue; // inexist receiver
 				}
