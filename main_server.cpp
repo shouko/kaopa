@@ -72,7 +72,7 @@ void notify_sender(Transaction* trans, User* user){
 		}else{
 			msg = "201 INSUFFICIENT_FUND#";
 		}
-		msg +=  trans->user_to + " " + trans->amount;
+		msg +=  trans->user_to + " " + trans->amount + "\n";
 		s.send(msg);
 		s.recv();
 	}catch(SocketException e){
