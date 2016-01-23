@@ -65,6 +65,7 @@ int export_users(string fn){
 void notify_sender(Transaction* trans, User* user){
 	try{
 		Socket s(user->ip, user->port);
+		s.recv(); // get Hello
 		string msg;
 		if(trans->success){
 			msg = "100 OK#";

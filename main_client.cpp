@@ -135,10 +135,10 @@ public:
 		try{
 			//			SecureSocket s_to(it->second.ip, it->second.port);
 			Socket sto(it->second.ip.c_str(), it->second.port.c_str());
-			sleep(1200);
+			sto.recv(); // get Hello
 			string request = "0#" + this->username + "#" + to_string(amount) + "#" + to_user + "#\n";
 			sto.send(request);
-			const char* result = sto.recv();
+			string result(sto.recv());
 			if(result[0] != '1'){
 				return -3;
 			}
@@ -294,6 +294,7 @@ void payment_ack(Payment& payment_data){
 void payment_accept(Socket* s){
 	while(1){
 		Socket* c = s->accept();
+		c->send("Hello\n");
 		stringstream ps(c->recv());
 		Payment payment_data;
 		string action;
