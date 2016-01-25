@@ -28,5 +28,6 @@ KAOPA
  - socket 部分採用 POSIX socket，並包裝為 **Socket** class
  - 加密連線採用 OpenSSL，包裝為繼承 **Socket** 的 **SecureSocket** class
  - 僅會對 OpenSSL initialize 一次，並於每個 **SecureSocket** 物件產生屬於自己的 **SSL_CTX*** 及 **SSL***
+ - 預設使用 **server.crt.pem** 及 **server.key.pem** 做為憑證
  - 定義 **Transaction** class 用於在函式間傳遞一筆付款的資訊
  - 不包含 **User** class，由於 client, server 所需的資訊有所不同
