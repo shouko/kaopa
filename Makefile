@@ -1,4 +1,4 @@
-CFLAGS = -g -Wall -std=c++11
+CFLAGS = -g -Wall -std=c++11 -I/usr/local/opt/openssl/include
 EXEC = client server
 OUTDIR = bin/release
 
@@ -21,7 +21,7 @@ LIBFLAGS = -lncurses
 else
 LIBFLAGS = -lncursesw -pthread
 endif
-LIBFLAGS += -lcrypto -lssl
+LIBFLAGS += -lcrypto -lssl -L/usr/local/opt/openssl/lib
 
 ###############
 # PHONY rules #
