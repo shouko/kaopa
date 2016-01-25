@@ -1,4 +1,4 @@
-CFLAGS = -g -Wall -std=c++11 -I/usr/local/opt/openssl/include
+CFLAGS = -g -Wall -std=c++11
 EXEC = client server
 OUTDIR = bin/release
 
@@ -21,7 +21,16 @@ LIBFLAGS = -lncurses
 else
 LIBFLAGS = -lncursesw -pthread
 endif
-LIBFLAGS += -lcrypto -lssl -L/usr/local/opt/openssl/lib
+LIBFLAGS += -lcrypto -lssl
+
+###############
+# OpenSSL from Brew #
+###############
+
+ifdef BREW
+LIBFLAGS +=  -L/usr/local/opt/openssl/lib
+CFLAGS += -I/usr/local/opt/openssl/include
+endif
 
 ###############
 # PHONY rules #
