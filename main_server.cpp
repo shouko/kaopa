@@ -7,6 +7,8 @@
 #include <assert.h>
 #include "util.h"
 using namespace std;
+typedef SecureSocket PeerSocket;
+typedef SecureSocket ServerSocket;
 
 class User{
 public:
@@ -58,7 +60,7 @@ int export_users(string fn){
 
 void notify_sender(Transaction* trans, User* user){
 	try{
-		Socket s(user->ip, user->port);
+		PeerSocket s(user->ip, user->port);
 		s.recv(); // get Hello
 		string msg;
 		if(trans->success){
@@ -74,7 +76,7 @@ void notify_sender(Transaction* trans, User* user){
 	}
 }
 
-int send_list(User* current_user, SecureSocket* c){
+int send_list(User* current_user, ServerSocket* c){
 	string uol_str = "";
 	int uol = 0;
 	for(map<string, User*>::iterator it = users_online.begin(); it != users_online.end(); it++){
@@ -85,7 +87,7 @@ int send_list(User* current_user, SecureSocket* c){
 	return c->send(to_string(current_user->balance)+ "\n" + to_string(uol) + "\n" + uol_str);
 }
 
-int connection_process(SecureSocket* c){
+int connection_process(ServerSocket* c){
 	User* current_user = 0;
 	try{
 		c->send("Hello!");
@@ -201,7 +203,7 @@ int connection_process(SecureSocket* c){
 	return 0;
 }
 
-int connection_accept(SecureSocket* s){
+int connection_accept(ServerSocket* s){
 	while(1){
 		try{
 			thread (connection_process, s->accept()).detach();
@@ -215,7 +217,7 @@ int main(int argc, char* argv[]){
 	cout << "Importing user data..." << endl;
 	import_users("data_server.txt");
 	cout << "Imported user data." << endl;
-	SecureSocket* s = new SecureSocket();
+	ServerSocket* s = new ServerSocket();
 	s->listen(8889);
 	int local_port = s->getlocalport();
 	thread (connection_accept, s).detach();

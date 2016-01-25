@@ -13,6 +13,8 @@
 #define EMPTY_LINE "                                                                                "
 #define EMPTY_LINE_50 "                                                  "
 using namespace std;
+typedef SecureSocket PeerSocket;
+typedef SecureSocket ServerSocket;
 
 struct User{
 	string username;
@@ -33,7 +35,7 @@ vector<Transaction> transactionHistory;
 
 class Client{
 private:
-	SecureSocket* s;
+	ServerSocket* s;
 	string remote_host;
 	string username;
 	int balance;
@@ -57,7 +59,7 @@ private:
 
 public:
 	Client(const char* remote_host, const char* port) : remote_host(remote_host), username(""), balance(UNSPEC_BALANCE), local_port(0){
-		s = new SecureSocket(this->remote_host.c_str(), port);
+		s = new ServerSocket(this->remote_host.c_str(), port);
 		s->recv();
 	}
 	~Client(){
@@ -134,7 +136,7 @@ public:
 		}
 		try{
 			//			SecureSocket s_to(it->second.ip, it->second.port);
-			Socket sto(it->second.ip.c_str(), it->second.port.c_str());
+			PeerSocket sto(it->second.ip.c_str(), it->second.port.c_str());
 			sto.recv(); // get Hello
 			string request = "0#" + this->username + "#" + to_string(amount) + "#" + to_user + "#\n";
 			sto.send(request);
@@ -291,9 +293,9 @@ void payment_ack(Payment& payment_data){
 	transactionHistory.push_back(trans);
 }
 
-void payment_accept(Socket* s){
+void payment_accept(PeerSocket* s){
 	while(1){
-		Socket* c = s->accept();
+		PeerSocket* c = s->accept();
 		c->send("Hello\n");
 		stringstream ps(c->recv());
 		Payment payment_data;
@@ -533,7 +535,7 @@ int menu_command(char menu[][2][16], int items, int initial = 0){
 
 int main(int argc, char* argv[]){
 
-	Socket* p = new Socket();
+	PeerSocket* p = new PeerSocket();
 	p->listen();
 	int local_port = p->getlocalport();
 	thread (payment_accept, p).detach();
