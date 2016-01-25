@@ -31,6 +31,15 @@ public:
 	string user_to;
 };
 
+enum PayResult{
+	Success,
+	PeerNotOnline,
+	PeerConnIssue,
+	InsufficientBalance,
+	IllegalAmount,
+	GeneralFailure
+};
+
 SafeQueue<Payment> paymentQueue;
 vector<Transaction> transactionHistory;
 
@@ -127,13 +136,16 @@ public:
 	const int get_balance(){
 		return balance;
 	}
-	int pay(string to_user, int amount){
+	PayResult pay(string to_user, int amount){
 		map<string, User>::iterator it = users.find(to_user);
 		if(it == users.end()){
-			return -1;
+			return PeerNotOnline;
 		}
 		if(amount > get_balance()){
-			return -2;
+			return InsufficientBalance;
+		}
+		if(amount < 0){
+			return IllegalAmount;
 		}
 		try{
 			//			SecureSocket s_to(it->second.ip, it->second.port);
@@ -143,10 +155,10 @@ public:
 			sto.send(request);
 			string result(sto.recv());
 			if(result[0] != '1'){
-				return -3;
+				return PeerConnIssue;
 			}
 		}catch(SocketException e){
-			return -1;
+			return PeerConnIssue;
 		}
 #if not KEEP_TRANSACTION_STATUS
 		Transaction trans;
@@ -155,7 +167,7 @@ public:
 		trans.amount = to_string(amount);
 		transactionHistory.push_back(trans);
 #endif
-		return 0;
+		return Success;
 	}
 friend void show_list();
 };
@@ -387,16 +399,19 @@ void init_payment(){
 	wrefresh(info_window);
 	const char* msg;
 	switch(c->pay(to_user, amount)){
-		case 0:
+		case Success:
 			msg = "交易送出！請等待目標客戶端向伺服器兌換";
 			break;
-		case -1:
+		case PeerNotOnline:
 			msg = "交易失敗：目標帳號不存在，或不在線上";
 			break;
-		case -2:
+		case InsufficientBalance:
 			msg = "交易失敗：餘額不足";
 			break;
-		case -3:
+		case IllegalAmount:
+			msg = "交易失敗：非法金額";
+			break;
+		case PeerConnIssue:
 			msg = "交易失敗：目標客戶端連線問題";
 			break;
 		default:
