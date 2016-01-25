@@ -12,8 +12,9 @@
 #define UNSPEC_BALANCE -100000
 #define EMPTY_LINE "                                                                                "
 #define EMPTY_LINE_50 "                                                  "
+#define KEEP_TRANSACTION_STATUS 0
 using namespace std;
-typedef SecureSocket PeerSocket;
+typedef Socket PeerSocket;
 typedef SecureSocket ServerSocket;
 
 struct User{
@@ -147,6 +148,13 @@ public:
 		}catch(SocketException e){
 			return -1;
 		}
+#if not KEEP_TRANSACTION_STATUS
+		Transaction trans;
+		trans.user_from = "我";
+		trans.user_to = to_user;
+		trans.amount = to_string(amount);
+		transactionHistory.push_back(trans);
+#endif
 		return 0;
 	}
 friend void show_list();
@@ -295,29 +303,37 @@ void payment_ack(Payment& payment_data){
 
 void payment_accept(PeerSocket* s){
 	while(1){
-		PeerSocket* c = s->accept();
-		c->send("Hello\n");
-		stringstream ps(c->recv());
-		Payment payment_data;
-		string action;
-		getline(ps, action, '#');
-		if(action[0] == '0'){
-			// payment from peer
-			getline(ps, payment_data.user_from, '#');
-			getline(ps, payment_data.amount, '#');
-			getline(ps, payment_data.user_to, '#');
-			c->send("100 OK\n");
-			payment_ack(payment_data);
-		}else if(action[0] == '1' || action[0] == '2'){
-			// ACK from server about my outgoing payments
-			Transaction trans;
-			trans.user_from = "我";
-			ps >> trans.user_to >> trans.amount;
-			trans.success = action[0] == '1';
-			transactionHistory.push_back(trans);
-			c->send("100 OK\n");
+		try{
+			PeerSocket* c = s->accept();
+			c->send("Hello\n");
+			string request(c->recv());
+			stringstream ps(request);
+			Payment payment_data;
+			string action;
+			getline(ps, action, '#');
+			if(action[0] == '0'){
+				// payment from peer
+				getline(ps, payment_data.user_from, '#');
+				getline(ps, payment_data.amount, '#');
+				getline(ps, payment_data.user_to, '#');
+				c->send("100 OK\n");
+				payment_ack(payment_data);
+			}else if(action[0] == '1' || action[0] == '2'){
+				// ACK from server about my outgoing payments
+#if KEEP_TRANSACTION_STATUS
+				Transaction trans;
+				trans.user_from = "我";
+				getline(ps, trans.user_to, '#');
+				getline(ps, trans.amount, '#');
+				trans.success = action[0] == '1';
+				transactionHistory.push_back(trans);
+#endif
+				c->send("100 OK\n");
+			}
+			delete c;
+		}catch(SocketException e){
+			continue;
 		}
-		delete c;
 	}
 }
 
@@ -429,13 +445,16 @@ void show_history(){
 	mvwprintw(info_window, 1, 4, "付款方");
 	mvwprintw(info_window, 1, 18, "收款方");
 	mvwprintw(info_window, 1, 32, "金額");
+#if KEEP_TRANSACTION_STATUS
 	mvwprintw(info_window, 1, 40, "狀態");
+#endif
 	int i = 2;
 	for(vector<Transaction>::iterator it = transactionHistory.begin(); it != transactionHistory.end(); it++){
 		mvwprintw(info_window, i, 1, "%d", i - 1);
 		mvwprintw(info_window, i, 4, it->user_from.c_str());
 		mvwprintw(info_window, i, 18, it->user_to.c_str());
 		mvwprintw(info_window, i, 32, it->amount.c_str());
+#if KEEP_TRANSACTION_STATUS
 		wattroff(info_window, COLOR_PAIR(3));
 		if(it->success){
 			wattron(info_window, COLOR_PAIR(8));
@@ -447,6 +466,7 @@ void show_history(){
 			wattroff(info_window, COLOR_PAIR(9));
 		}
 		wattron(info_window, COLOR_PAIR(3));
+#endif
 		i++;
 	}
 	mvwprintw(info_window, 13, 18, "[ 任意鍵關閉 ]");

@@ -7,7 +7,7 @@
 #include <assert.h>
 #include "util.h"
 using namespace std;
-typedef SecureSocket PeerSocket;
+typedef Socket PeerSocket;
 typedef SecureSocket ServerSocket;
 
 class User{
@@ -68,7 +68,7 @@ void notify_sender(Transaction* trans, User* user){
 		}else{
 			msg = "201 INSUFFICIENT_FUND#";
 		}
-		msg +=  trans->user_to + " " + trans->amount + "\n";
+		msg +=  trans->user_to + "#" + trans->amount + "#\n";
 		s.send(msg);
 		s.recv();
 	}catch(SocketException e){
